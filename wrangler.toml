@@ -2,6 +2,4 @@
 name = "idev-cloudflare"
 compatibility_date = "2026-01-28"
 pages_build_output_dir = "dist"
-
-[site]
-bucket = "dist"
+compatibility_flags = ["nodejs_compat"]
