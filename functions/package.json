@@ -1,0 +1,8 @@
+{
+  "name": "cloudflare-pages-functions",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@neondatabase/serverless": "^0.7.0"
+  }
+}
