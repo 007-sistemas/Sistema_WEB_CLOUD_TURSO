@@ -97,66 +97,6 @@ export const Dashboard: React.FC = () => {
             </div>
         </div>
 
-        {/* Table Section */}
-        <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-fit">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-            <h3 className="font-semibold text-gray-800">Histórico de Registros</h3>
-            <div className="relative">
-              <Search className="h-4 w-4 text-gray-400 absolute left-3 top-2.5" />
-              <input 
-                type="text"
-                placeholder="Filtrar cooperado..."
-                className="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary-500 bg-white text-gray-900"
-                value={filterCooperado}
-                onChange={e => setFilterCooperado(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-white text-gray-700 font-medium sticky top-0 z-10 shadow-sm">
-                <tr>
-                  <th className="px-6 py-3">Data/Hora</th>
-                  <th className="px-6 py-3">Cooperado</th>
-                  <th className="px-6 py-3">Tipo</th>
-                  <th className="px-6 py-3">Local/Setor</th>
-                  <th className="px-6 py-3">Obs</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredPontos.length > 0 ? (
-                  filteredPontos.map(p => (
-                    <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 font-mono text-gray-500">
-                        {new Date(p.timestamp).toLocaleString('pt-BR')}
-                      </td>
-                      <td className="px-6 py-3 font-medium text-gray-900">{p.cooperadoNome}</td>
-                      <td className="px-6 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          p.tipo === 'ENTRADA' ? 'bg-green-100 text-green-700' :
-                          p.tipo === 'SAIDA' ? 'bg-red-100 text-red-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {p.tipo === 'ENTRADA' ? 'INÍCIO' : p.tipo === 'SAIDA' ? 'FIM' : p.tipo}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 truncate max-w-[200px]" title={p.local}>{p.local}</td>
-                      <td className="px-6 py-3 text-gray-400 italic text-xs truncate max-w-[150px]">
-                        {p.observacao || '-'}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="text-center py-8 text-gray-400">
-                      Nenhum registro encontrado.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </div>
   );
