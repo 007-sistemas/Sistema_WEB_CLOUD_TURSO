@@ -1,0 +1,859 @@
+
+import React, { useState, useEffect } from 'react';
+// @ts-ignore
+import { StorageService } from '../services/storage';
+import { StorageService } from '../services/storage';
+import { RegistroPonto, Hospital, TipoPonto, Justificativa, Setor } from '../types';
+import { Calendar, Building2, Filter, FileClock, Clock, RefreshCw } from 'lucide-react';
+import { apiGet } from '../services/api';
+
+// Interface auxiliar para exibição (Mesma do Relatório)
+interface ShiftRow {
+  id: string; 
+  local: string;
+  setorNome: string;
+  data: string;
+  entry?: RegistroPonto;
+  exit?: RegistroPonto;
+  status: string;
+  statusDetails?: string;
+}
+
+export const EspelhoBiometria: React.FC = () => {
+  // Estados do formulário de justificativa
+  const [justHospitalId, setJustHospitalId] = useState('');
+  const [justSetorId, setJustSetorId] = useState('');
+  const [justDataPlantao, setJustDataPlantao] = useState('');
+  const [justEntrada, setJustEntrada] = useState('');
+  const [justSaida, setJustSaida] = useState('');
+  const [justMotivo, setJustMotivo] = useState('Esquecimento');
+  const [justDescricao, setJustDescricao] = useState('');
+  const [justLoading, setJustLoading] = useState(false);
+
+  // Limpar formulário
+  const resetJustForm = () => {
+    setJustHospitalId('');
+    setJustSetorId('');
+    setJustDataPlantao('');
+    setJustEntrada('');
+    setJustSaida('');
+    setJustMotivo('Esquecimento');
+    setJustDescricao('');
+  };
+
+  // Submissão da justificativa
+  const handleJustificativa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!justHospitalId || !justSetorId || !justDataPlantao || !justEntrada || !justSaida || !justMotivo) {
+      alert('Preencha todos os campos obrigatórios.');
+      return;
+    }
+    if (!cooperadoId || !cooperadoData?.nome) {
+      alert('Sessão inválida. Faça login novamente.');
+      return;
+    }
+    setJustLoading(true);
+    try {
+      const justificativa: Justificativa = {
+        id: (window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)),
+        cooperadoId,
+        cooperadoNome: cooperadoData.nome,
+        pontoId: undefined,
+        hospitalId: justHospitalId,
+        setorId: justSetorId,
+        motivo: justMotivo,
+        descricao: justDescricao,
+        dataSolicitacao: new Date().toISOString(),
+        status: 'Pendente',
+        dataPlantao: justDataPlantao,
+        entradaPlantao: justEntrada,
+        saidaPlantao: justSaida,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      console.log('[Justificativa] Enviando para StorageService.saveJustificativa:', justificativa);
+      const result = await StorageService.saveJustificativa(justificativa);
+      console.log('[Justificativa] Resultado do saveJustificativa:', result);
+      alert('Justificativa enviada para aprovação do gestor.');
+      resetJustForm();
+      setTimeout(() => loadData(), 500);
+    } catch (err: any) {
+      console.error('[Justificativa] Erro ao enviar justificativa:', err);
+      alert('Erro ao enviar justificativa: ' + (err?.message || err));
+    } finally {
+      setJustLoading(false);
+    }
+  };
+  const [logs, setLogs] = useState<RegistroPonto[]>([]);
+  const [hospitais, setHospitais] = useState<Hospital[]>([]);
+  const [setores, setSetores] = useState<Setor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
+  
+  // Filters
+  const [filterHospital, setFilterHospital] = useState('');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
+
+  // Removido: justificativa parcial de horário (entrada/saída)
+
+  // Derived states
+  const cooperadoId = session?.type === 'COOPERADO' ? session?.user?.id : null;
+  const cooperadoData = session?.type === 'COOPERADO' ? session?.user : null;
+
+  const matchesCooperado = (log: any, coopId?: string | null, sess?: any) => {
+    const effectiveId = coopId || cooperadoId;
+    const effectiveName = sess?.user?.nome || cooperadoData?.nome;
+    if (!effectiveId && !effectiveName) return true;
+    const sameId = effectiveId ? log.cooperadoId === effectiveId : false;
+    const sameName = effectiveName && log.cooperadoNome && log.cooperadoNome.trim().toLowerCase() === effectiveName.trim().toLowerCase();
+    return sameId || sameName;
+  };
+
+  const isPendingStatus = (status?: string | null) => {
+    const normalized = (status || '').trim().toLowerCase();
+    return normalized === 'pendente' || normalized === 'aguardando autorização' || normalized === 'aguardando autorizacao';
+  };
+  // Ref para evitar múltiplos loadData simultâneos
+  const isLoadingRef = React.useRef(false);
+  const lastReloadRef = React.useRef(0);
+
+  useEffect(() => {
+    // Recarregar session ao montar o componente
+    const currentSession = StorageService.getSession();
+    setSession(currentSession);
+    
+    // Set default date range (Current Month)
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    setDateStart(firstDay);
+    setDateEnd(lastDay);
+
+    if (currentSession?.type === 'COOPERADO') {
+      const cooperadoIdFromSession = currentSession?.user?.id;
+      loadData(cooperadoIdFromSession, currentSession);
+    }
+  }, []);
+
+  const triggerReload = (reason?: string) => {
+    const now = Date.now();
+    if (now - lastReloadRef.current < 5000) return;
+    lastReloadRef.current = now;
+    if (reason) {
+      console.log('[EspelhoBiometria] 🔁 Reload:', reason);
+    }
+    loadData(cooperadoId, session);
+  };
+
+  useEffect(() => {
+    if (!session?.type) return;
+
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        triggerReload('focus');
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        triggerReload('visibility');
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        triggerReload('interval');
+      }
+    }, 20000);
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [session?.type, cooperadoId]);
+
+  // ❌ DESABILITAR auto-refresh - causava conflitos e piscagem
+  // Apenas as notificações (eventos customizados) disparam recarregamentos
+
+      // Listener para notificações de exclusão ou alteração (limpa cache do cooperado e recarrega)
+      // Usar debounce para evitar múltiplos recarregamentos simultâneos
+      useEffect(() => {
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+        
+        // Handler para StorageEvent (outras abas) e CustomEvent (mesma aba) com debounce
+        const handleDataChange = () => {
+          if (!session?.type) return;
+          if (session.type === 'COOPERADO' || session.type === 'HOSPITAL') {
+            // Cancelar timer anterior para resetar debounce
+            if (debounceTimer) clearTimeout(debounceTimer);
+            
+            console.log('[EspelhoBiometria] 📢 Notificação recebida. Aguardando 2 segundos...');
+            
+            // Aguardar 2 segundos para garantir que Neon está consistente
+            // e para agrupar múltiplas notificações que chegarem próximas
+            debounceTimer = setTimeout(async () => {
+              // Evitar múltiplos loadData simultâneos
+              if (isLoadingRef.current) {
+                console.log('[EspelhoBiometria] ⏸️ Já está carregando, ignorando notificação...');
+                return;
+              }
+              
+              console.log('[EspelhoBiometria] 🔄 Recarregando dados após notificação...');
+              await loadData();
+            }, 2000);
+          }
+        };
+
+        const handleStorageChange = (e: StorageEvent) => {
+          const isDelete = e.key === 'biohealth_plantao_deleted' && e.newValue;
+          const isChange = e.key === 'biohealth_pontos_changed' && e.newValue;
+          if (isDelete || isChange) {
+            handleDataChange();
+          }
+        };
+
+        const handleCustomEvent = (e: Event) => {
+          console.log('[EspelhoBiometria] 📢 Evento customizado:', (e as CustomEvent).detail?.action || 'update');
+          handleDataChange();
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('biohealth:plantao:deleted', handleCustomEvent);
+        window.addEventListener('biohealth:pontos:changed', handleCustomEvent);
+        window.addEventListener('biohealth:justificativa:updated', handleCustomEvent);
+        
+        return () => {
+          if (debounceTimer) clearTimeout(debounceTimer);
+          window.removeEventListener('storage', handleStorageChange);
+          window.removeEventListener('biohealth:plantao:deleted', handleCustomEvent);
+          window.removeEventListener('biohealth:pontos:changed', handleCustomEvent);
+          window.removeEventListener('biohealth:justificativa:updated', handleCustomEvent);
+        };
+      }, [session]);
+
+  const loadData = async (coopId?: string, sess?: any) => {
+    const effectiveCoopId = coopId || cooperadoId;
+    const effectiveSession = sess || session;
+    
+    if (!effectiveCoopId || !effectiveSession) {
+      console.warn('[EspelhoBiometria] Sem session ou cooperadoId, abortando loadData');
+      return;
+    }
+
+    // Evitar múltiplos loadData simultâneos
+    if (isLoadingRef.current) {
+      console.log('[EspelhoBiometria] ⏸️ Já está carregando, ignorando novo loadData...');
+      return;
+    }
+
+    try {
+      isLoadingRef.current = true;
+      setLoading(true);
+
+      // IMPORTANTE: Atualizar sessão a cada loadData
+      const currentSession = StorageService.getSession();
+      setSession(currentSession);
+      console.log('[EspelhoBiometria] 🔐 Sessão atualizada:', currentSession?.user?.nome);
+
+      // Sincronizar com Neon (timeout para não bloquear em caso de falha)
+      console.log('[EspelhoBiometria] 🔄 Sincronizando com Neon...');
+      const syncPromises = [
+        StorageService.refreshHospitaisFromRemote(),
+        StorageService.refreshCooperadosFromRemote(),
+        StorageService.refreshPontosFromRemote()
+      ];
+      
+      // Aguardar sincronização com timeout de 5 segundos
+      await Promise.race([
+        Promise.all(syncPromises),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Sync timeout')), 5000))
+      ]).catch(syncErr => {
+        console.warn('[EspelhoBiometria] ⚠️ Falha ao sincronizar remoto:', syncErr);
+      });
+      
+      console.log('[EspelhoBiometria] ✅ Sincronização completa');
+
+      // Buscar todas as justificativas para montar pontos sintéticos de pendentes/rejeitados
+      let todasJustificativas: Justificativa[] = [];
+      try {
+        todasJustificativas = await apiGet<Justificativa[]>('sync?action=list_justificativas');
+        console.log('[EspelhoBiometria] 📋 Justificativas do Neon:', todasJustificativas.length);
+      } catch (e) {
+        console.warn('[EspelhoBiometria] Falha ao buscar justificativas remotas, usando local:', e);
+        todasJustificativas = StorageService.getJustificativas();
+        console.log('[EspelhoBiometria] 📋 Justificativas locais:', todasJustificativas.length);
+      }
+
+      // Todos os pontos vêm do Neon sem filtro de exclusão (não há status 'Excluído' mais)
+      const allPontosFromStorage = StorageService.getPontos();
+      const pontosBase = allPontosFromStorage.filter(p => matchesCooperado(p, effectiveCoopId, effectiveSession));
+      const baseIds = new Set(pontosBase.map(p => p.id));
+      const baseRelatedIds = new Set(pontosBase.map(p => p.relatedId).filter(Boolean) as string[]);
+      const baseCodigos = new Set(pontosBase.map(p => p.codigo).filter(Boolean));
+
+      // Incluir saidas/entradas relacionadas mesmo que estejam sem cooperadoId
+      const pontosAntesDoFiltro = allPontosFromStorage.filter(p => {
+        if (baseIds.has(p.id)) return true;
+        if (p.relatedId && baseIds.has(p.relatedId)) return true;
+        if (baseRelatedIds.has(p.id)) return true;
+        if (p.codigo && baseCodigos.has(p.codigo)) return true;
+        return false;
+      });
+      console.log('[EspelhoBiometria] 📊 Pontos carregados:', pontosAntesDoFiltro.length);
+      
+      const allPontos = pontosAntesDoFiltro;
+      const existingIds = new Set(allPontos.map(p => p.id));
+
+      // Unir justificativas sem ponto (ou com ponto ausente no storage) para exibir pendentes/rejeitados
+      let synthetic: RegistroPonto[] = [];
+      const filteredJust = todasJustificativas.filter(j => 
+        matchesCooperado({ cooperadoId: j.cooperadoId, cooperadoNome: j.cooperadoNome }, effectiveCoopId, effectiveSession)
+        // Mostra TODOS os status: Pendente, Fechado, Rejeitado (sem filtro de exclusão)
+      );
+      const missingJust = filteredJust.filter(j => !j.pontoId || !existingIds.has(j.pontoId));
+      synthetic = buildPontosFromJustificativas(missingJust, StorageService.getHospitais(), existingIds);
+
+      const merged = [...allPontos, ...synthetic];
+      const sorted = merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setLogs(sorted);
+
+      // Identificar hospitais onde o usuário tem registros
+      const uniqueHospitalIds = [...new Set(sorted.map(p => p.hospitalId).filter(Boolean))];
+      const allHospitais = StorageService.getHospitais();
+      const myHospitais = allHospitais.filter(h => uniqueHospitalIds.includes(h.id));
+
+      setHospitais(myHospitais);
+
+      // Carregar setores de todos os hospitais
+      await loadAllSetores(myHospitais);
+    } catch (err) {
+      console.error('[EspelhoBiometria] Erro ao carregar dados:', err);
+    } finally {
+      setLoading(false);
+      isLoadingRef.current = false;
+      console.log('[EspelhoBiometria] ✅ Carregamento completo');
+    }
+  };
+
+  const loadAllSetores = async (hospitaisList: Hospital[]) => {
+    try {
+      const setoresByHospital = await Promise.all(
+        hospitaisList.map(async (hospital) => {
+          try {
+            const setores = await apiGet<Setor[]>(`hospital-setores?hospitalId=${hospital.id}`);
+            return setores || [];
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      const flattened = setoresByHospital.flat();
+      const unique = flattened.filter((setor, index, self) => index === self.findIndex(s => s.id === setor.id));
+      setSetores(unique);
+    } catch (error) {
+      console.error('[EspelhoBiometria] Erro ao carregar setores:', error);
+    }
+  };
+
+  const getFilteredLogs = () => {
+    return logs.filter(log => {
+      // Modo cooperado: garantir que o registro pertence ao usuário logado (fallback por nome se faltar ID)
+      if (cooperadoId && !matchesCooperado(log, cooperadoId, session)) return false;
+
+      // Filter by Hospital
+      if (filterHospital && log.hospitalId !== filterHospital) return false;
+
+      // Filter by Date Range
+      if (dateStart || dateEnd) {
+        const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+        if (dateStart && logDate < dateStart) return false;
+        if (dateEnd && logDate > dateEnd) return false;
+      }
+
+      return true;
+    });
+  };
+
+  // --- PAIRING LOGIC (Shift View) ---
+  const getShiftRows = (): ShiftRow[] => {
+    const filtered = getFilteredLogs();
+    const shifts: ShiftRow[] = [];
+    const processedExits = new Set<string>();
+    const processedEntries = new Set<string>();
+
+    // Ordenar por timestamp ascendente (mais antigo primeiro) para pareamento correto
+    const sortedFiltered = filtered.sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    const entradas = sortedFiltered.filter(r => r.tipo === TipoPonto.ENTRADA);
+    const saidas = sortedFiltered.filter(r => r.tipo === TipoPonto.SAIDA);
+
+    // Função auxiliar para construir nome do setor
+    const getSetorNome = (log: RegistroPonto) => {
+      const setorId = String(log.setorId);
+      const setorName = log.setorId ? setores.find(s => String(s.id) === setorId)?.nome : '';
+      const hospital = hospitais.find(h => h.id === log.hospitalId);
+      const isFiltered = filterHospital && filterHospital !== '';
+      return isFiltered
+        ? (setorName || log.local || 'Não especificado')
+        : `${hospital?.nome || log.local || 'Não especificado'}${setorName ? ' - ' + setorName : ''}`;
+    };
+
+    // 1. Parear cada ENTRADA com a próxima SAÍDA disponível (mesma lógica do Controle de Produção)
+    entradas.forEach(entrada => {
+      let saidaPareada: RegistroPonto | undefined;
+      let saidaIndex = -1;
+
+      // 1ª prioridade: relatedId da entrada aponta para saída
+      if (entrada.relatedId) {
+        saidaIndex = saidas.findIndex(s => s.id === entrada.relatedId && !processedExits.has(s.id));
+      }
+
+      // 2ª prioridade: saída com relatedId apontando para esta entrada
+      if (saidaIndex === -1) {
+        saidaIndex = saidas.findIndex(s => s.relatedId === entrada.id && !processedExits.has(s.id));
+      }
+
+      // 3ª prioridade: mesmo código e timestamp posterior
+      if (saidaIndex === -1) {
+        saidaIndex = saidas.findIndex(s =>
+          s.codigo === entrada.codigo &&
+          new Date(s.timestamp).getTime() > new Date(entrada.timestamp).getTime() &&
+          !processedExits.has(s.id)
+        );
+      }
+
+      // 4ª prioridade: próxima saída cronológica
+      if (saidaIndex === -1) {
+        saidaIndex = saidas.findIndex(s =>
+          new Date(s.timestamp).getTime() > new Date(entrada.timestamp).getTime() &&
+          !processedExits.has(s.id)
+        );
+      }
+      if (saidaIndex !== -1) {
+        saidaPareada = saidas[saidaIndex];
+        processedExits.add(saidaPareada.id);
+      }
+
+      processedEntries.add(entrada.id);
+
+      const isManualVal = (val: any, status?: string) => val === true || val === 'true' || val === 1 || val === '1' || isPendingStatus(status);
+      const entradaManual = isManualVal((entrada as any).isManual, entrada.status);
+      const saidaManual = saidaPareada && isManualVal((saidaPareada as any).isManual, saidaPareada.status);
+
+      const aguardandoEntrada = isPendingStatus(entrada.status) || (!entrada.status && entradaManual);
+      const aguardandoSaida = saidaPareada && (isPendingStatus(saidaPareada.status) || (!saidaPareada.status && saidaManual));
+      const manualPair = entradaManual || saidaManual;
+      const hasApproval = (entrada.validadoPor && entrada.status === 'Fechado') || (saidaPareada && saidaPareada.validadoPor && saidaPareada.status === 'Fechado');
+
+      let statusDisplay = 'Em Aberto';
+      let statusDetails = '';
+
+      if (entrada.status === 'Rejeitado' || (saidaPareada?.status === 'Rejeitado')) {
+        statusDisplay = 'Recusado';
+        const rejPonto = entrada.status === 'Rejeitado' ? entrada : saidaPareada;
+        statusDetails = `${rejPonto?.rejeitadoPor || 'Gestor'}${rejPonto?.motivoRejeicao ? ': ' + rejPonto.motivoRejeicao : ''}`;
+      } else if (saidaPareada && saidaPareada.status === 'Fechado' && saidaPareada.validadoPor) {
+        statusDisplay = 'Fechado';
+        statusDetails = saidaPareada.validadoPor;
+      } else if (entrada.status === 'Fechado' && entrada.validadoPor) {
+        statusDisplay = 'Fechado';
+        statusDetails = entrada.validadoPor;
+      } else if (manualPair && !hasApproval) {
+        statusDisplay = 'Aguardando Autorização';
+      } else if (aguardandoEntrada || aguardandoSaida) {
+        statusDisplay = 'Aguardando Autorização';
+      } else if (saidaPareada) {
+        statusDisplay = 'Fechado';
+      }
+
+      shifts.push({
+        id: entrada.id,
+        local: entrada.local || 'Não especificado',
+        setorNome: getSetorNome(entrada),
+        data: new Date(entrada.timestamp).toLocaleDateString('pt-BR'),
+        entry: entrada,
+        exit: saidaPareada,
+        status: statusDisplay,
+        statusDetails
+      });
+    });
+
+    // 2. Processar SAÍDAs órfãs (saídas sem entrada anterior)
+    saidas.forEach(saida => {
+      if (!processedExits.has(saida.id)) {
+        let statusDisplay = 'Em Aberto';
+        let statusDetails = '';
+        if (saida.status === 'Fechado' && saida.validadoPor) {
+          statusDisplay = 'Fechado';
+          statusDetails = saida.validadoPor;
+        } else if (saida.status === 'Rejeitado' && saida.rejeitadoPor) {
+          statusDisplay = 'Recusado';
+          statusDetails = `${saida.rejeitadoPor}${saida.motivoRejeicao ? ': ' + saida.motivoRejeicao : ''}`;
+        } else if (isPendingStatus(saida.status)) {
+          statusDisplay = 'Aguardando Autorização';
+        }
+
+        shifts.push({
+          id: saida.id,
+          local: saida.local || 'Não especificado',
+          setorNome: getSetorNome(saida),
+          data: new Date(saida.timestamp).toLocaleDateString('pt-BR'),
+          entry: undefined,
+          exit: saida,
+          status: statusDisplay,
+          statusDetails
+        });
+      }
+    });
+
+    // Sort by Date/Time descending (mais recente primeiro)
+    return shifts.sort((a, b) => {
+      const timeA = a.entry ? new Date(a.entry.timestamp).getTime() : new Date(a.exit!.timestamp).getTime();
+      const timeB = b.entry ? new Date(b.entry.timestamp).getTime() : new Date(b.exit!.timestamp).getTime();
+      return timeB - timeA;
+    });
+  };
+
+  const shiftRows = getShiftRows();
+
+  const buildPontosFromJustificativas = (justs: Justificativa[], hospitaisList: Hospital[], existingIds?: Set<string>): RegistroPonto[] => {
+    const hospMap = new Map(hospitaisList.map(h => [String(h.id), h.nome]));
+    const resultados: RegistroPonto[] = [];
+
+    // Helper para criar ISO timestamp preservando a data/hora local (não UTC)
+    const createLocalISOTimestamp = (dateStr: string, timeStr: string): string => {
+      // dateStr: "2026-01-17", timeStr: "08:00"
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hour, minute] = timeStr.split(':').map(Number);
+      const d = new Date(year, month - 1, day, hour, minute, 0);
+      // Não fazer conversão - new Date() já cria no timezone local, toISOString() converte para UTC corretamente
+      return d.toISOString();
+    };
+
+    justs.forEach(j => {
+      if (!j.dataPlantao) return;
+
+      if (j.pontoId && existingIds && existingIds.has(j.pontoId)) return;
+
+      const hospNome = j.hospitalId ? hospMap.get(String(j.hospitalId)) || 'Hospital não informado' : 'Hospital não informado';
+      const baseDate = j.dataPlantao;
+      const entradaHora = j.entradaPlantao || '00:00';
+      const saidaHora = j.saidaPlantao || entradaHora;
+
+      const entradaTs = createLocalISOTimestamp(baseDate, entradaHora);
+      let saidaDate = baseDate;
+      if (saidaHora < entradaHora) {
+        const d = new Date(baseDate);
+        d.setDate(d.getDate() + 1);
+        saidaDate = d.toISOString().split('T')[0];
+      }
+      const saidaTs = createLocalISOTimestamp(saidaDate, saidaHora);
+
+      const entryId = `just-${j.id}-ent`;
+      const exitId = `just-${j.id}-sai`;
+
+      const status = j.status === 'Fechado' ? 'Fechado' : j.status === 'Rejeitado' ? 'Rejeitado' : 'Pendente';
+
+      const pontoEntrada: RegistroPonto = {
+        id: entryId,
+        codigo: `JUST-${j.id}`,
+        cooperadoId: j.cooperadoId,
+        cooperadoNome: j.cooperadoNome,
+        timestamp: entradaTs,
+        tipo: TipoPonto.ENTRADA,
+        local: hospNome,
+        hospitalId: j.hospitalId,
+        setorId: j.setorId,
+        observacao: j.descricao,
+        relatedId: exitId,
+        status,
+        isManual: true,
+        validadoPor: status === 'Fechado' ? j.validadoPor : undefined,
+        rejeitadoPor: status === 'Rejeitado' ? j.rejeitadoPor : undefined,
+        motivoRejeicao: j.motivoRejeicao
+      };
+
+      const pontoSaida: RegistroPonto = {
+        id: exitId,
+        codigo: `JUST-${j.id}`,
+        cooperadoId: j.cooperadoId,
+        cooperadoNome: j.cooperadoNome,
+        timestamp: saidaTs,
+        tipo: TipoPonto.SAIDA,
+        local: hospNome,
+        hospitalId: j.hospitalId,
+        setorId: j.setorId,
+        observacao: j.descricao,
+        relatedId: entryId,
+        status,
+        isManual: true,
+        validadoPor: status === 'Fechado' ? j.validadoPor : undefined,
+        rejeitadoPor: status === 'Rejeitado' ? j.rejeitadoPor : undefined,
+        motivoRejeicao: j.motivoRejeicao
+      };
+
+      resultados.push(pontoEntrada, pontoSaida);
+    });
+
+    return resultados;
+  };
+
+  // Removido: handlers de justificativa parcial
+
+  if (loading && !session) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  if (!cooperadoId || !session || session.type !== 'COOPERADO') {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <FileClock className="h-12 w-12 mb-2 opacity-50" />
+        <p>Acesso restrito a cooperados.</p>
+        <p className="text-xs mt-2">Faça login como cooperado para acessar seu espelho de biometria.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <div className="animate-spin">
+          <Clock className="h-8 w-8" />
+        </div>
+        <p className="mt-4">Carregando dados...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <FileClock className="h-7 w-7 text-primary-600" />
+            Espelho da Biometria
+          </h2>
+          <p className="text-gray-500">Consulte seu histórico de produção e registros de ponto</p>
+        </div>
+        
+        <button
+          onClick={() => loadData()}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? 'Atualizando...' : 'Atualizar Dados'}
+        </button>
+      </div>
+
+      {/* Filters Panel */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center gap-2 mb-4 text-primary-700 font-semibold border-b border-gray-100 pb-2">
+            <Filter className="h-5 w-5" />
+            <h3>Filtros de Consulta</h3>
+        </div>
+                {/* Formulário de Justificativa de Plantão */}
+                <form className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-8 mb-4" onSubmit={handleJustificativa}>
+                  <div className="font-bold text-yellow-700 mb-2 flex items-center gap-2">
+                    <span className="text-lg">➕</span> Justificativa de Plantão
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-2">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Unidade</label>
+                      <select className="w-full p-2 rounded border" value={justHospitalId} onChange={e => setJustHospitalId(e.target.value)} required>
+                        <option value="">Selecione</option>
+                        {hospitais.map(h => <option key={h.id} value={h.id}>{h.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Setor</label>
+                      <select className="w-full p-2 rounded border" value={justSetorId} onChange={e => setJustSetorId(e.target.value)} required>
+                        <option value="">Selecione</option>
+                        {setores.filter(s => !justHospitalId || s.hospitalId === justHospitalId).map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Data do Plantão</label>
+                      <input type="date" className="w-full p-2 rounded border" value={justDataPlantao} onChange={e => setJustDataPlantao(e.target.value)} required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Horário de Entrada</label>
+                      <input type="time" className="w-full p-2 rounded border" value={justEntrada} onChange={e => setJustEntrada(e.target.value)} required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Horário de Saída</label>
+                      <input type="time" className="w-full p-2 rounded border" value={justSaida} onChange={e => setJustSaida(e.target.value)} required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Motivo da Falha</label>
+                      <select className="w-full p-2 rounded border" value={justMotivo} onChange={e => setJustMotivo(e.target.value)} required>
+                        <option value="Esquecimento">Esquecimento</option>
+                        <option value="Falha Técnica">Falha Técnica</option>
+                        <option value="Outro Motivo">Outro Motivo</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Descrição (opcional)</label>
+                      <input className="w-full p-2 rounded border" value={justDescricao} onChange={e => setJustDescricao(e.target.value)} maxLength={200} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button type="button" className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-bold" onClick={resetJustForm} disabled={justLoading}>Limpar</button>
+                    <button type="submit" className="px-4 py-2 rounded bg-primary-600 text-white font-bold flex items-center gap-2 disabled:opacity-60" disabled={justLoading}>
+                      <span className="text-lg">➕</span> Incluir
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">Use este formulário apenas quando não houve registro de entrada e saída.</div>
+                </form>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                    <Building2 className="h-3 w-3" /> Hospital de Atuação
+                </label>
+                <select 
+                    className="w-full bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                    value={filterHospital}
+                    onChange={e => setFilterHospital(e.target.value)}
+                >
+                    <option value="">Todos os Locais</option>
+                    {hospitais.map(h => (
+                        <option key={h.id} value={h.id}>{h.nome}</option>
+                    ))}
+                </select>
+                {hospitais.length === 0 && (
+                    <p className="text-[10px] text-gray-400 mt-1 italic">Nenhum histórico encontrado para gerar lista de locais.</p>
+                )}
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                    <Calendar className="h-3 w-3" /> Período Início
+                </label>
+                <input 
+                    type="date" 
+                    className="w-full bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+                    value={dateStart}
+                    onChange={e => setDateStart(e.target.value)}
+                />
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                    <Calendar className="h-3 w-3" /> Período Fim
+                </label>
+                <input 
+                    type="date" 
+                    className="w-full bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+                    value={dateEnd}
+                    onChange={e => setDateEnd(e.target.value)}
+                />
+            </div>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-primary-600 text-white font-bold sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-4">Data</th>
+                <th className="px-6 py-4">Setor / Local</th>
+                <th className="px-6 py-4 text-center">Entrada</th>
+                <th className="px-6 py-4 text-center">Saída</th>
+                <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4 text-right">Origem</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {shiftRows.map((row) => (
+                <tr key={row.id} className="hover:bg-primary-50 transition-colors">
+                  <td className="px-6 py-4 font-mono font-medium text-gray-900">
+                    {row.data}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                        <span className="font-medium text-gray-800">{row.setorNome}</span>
+                        {!filterHospital && (
+                           <span className="text-[10px] text-gray-500">{row.local.split(' - ')[0]}</span>
+                        )}
+                    </div>
+                  </td>
+                  
+                  {/* Coluna Entrada */}
+                    <td className="px-6 py-4 text-center font-mono font-bold text-gray-900">
+                    {row.entry ? (
+                      <span className="flex items-center justify-center gap-1">
+                        {isPendingStatus(row.entry.status) && <Clock className="h-3 w-3 text-gray-500" />}
+                            {new Date(row.entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
+                    ) : '--:--'}
+                  </td>
+
+                  {/* Coluna Saída */}
+                  <td className="px-6 py-4 text-center font-mono font-bold text-gray-900">
+                    {row.exit ? (
+                        <span className="flex items-center justify-center gap-1">
+                            {isPendingStatus(row.exit.status) && <Clock className="h-3 w-3 text-gray-500" />}
+                            {new Date(row.exit.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
+                    ) : row.entry?.saida ? (
+                        <span>{row.entry.saida}</span>
+                    ) : (
+                      '--:--'
+                    )}
+                  </td>
+
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
+                          isPendingStatus(row.status) ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                          row.status.includes('Recusado') ? 'bg-red-100 text-red-700 border border-red-200' :
+                          row.status.includes('Aberto') ? 'bg-amber-500 text-white' : 'bg-green-600 text-white'
+                      }`}>
+                          {row.status}
+                      </span>
+                      {row.statusDetails && (
+                        <span className="text-xs text-gray-600 italic max-w-[150px]">{row.statusDetails}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right text-xs text-gray-400">
+                    {(row.entry?.isManual || row.exit?.isManual) ? 'Manual / Ajuste' : 'Biometria'}
+                  </td>
+                </tr>
+              ))}
+              {shiftRows.length === 0 && (
+                <tr>
+                    <td colSpan={6} className="text-center py-12 text-gray-400 bg-gray-50">
+                        <div className="flex flex-col items-center">
+                            <Clock className="h-8 w-8 mb-2 opacity-30" />
+                            <span>Nenhum registro encontrado para o período selecionado.</span>
+                        </div>
+                    </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+        {/* Removido: modal de justificativa de horário */}
+    </div>
+  );
+};

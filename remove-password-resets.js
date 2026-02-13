@@ -1,0 +1,28 @@
+// Script para remover tabela password_resets não utilizada
+import { sql } from './turso-db.js';
+
+async function removePasswordResets() {
+  console.log('[CLEANUP] Removendo tabela password_resets não utilizada...');
+  try {
+    await sql`DROP TABLE IF EXISTS password_resets CASCADE`;
+    console.log('✅ Tabela password_resets removida');
+
+    console.log('\n📊 Tabelas finais no banco:');
+    const tables = await sql`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `;
+    tables.forEach(t => console.log(`   - ${t.table_name}`));
+
+    console.log('\n✅ Limpeza final concluída!');
+    console.log('\nBanco de dados otimizado com apenas as tabelas necessárias.');
+
+  } catch (err) {
+    console.error('❌ ERRO:', err.message);
+    process.exit(1);
+  }
+}
+
+removePasswordResets();
