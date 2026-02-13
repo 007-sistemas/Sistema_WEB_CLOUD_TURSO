@@ -134,6 +134,7 @@ export default function App() {
   }
 
   const renderView = () => {
+    console.log('Permissões atuais:', userPermissions);
     if (userPermissions && !userPermissions[currentView as keyof HospitalPermissions]) {
         return <div className="p-10 text-center text-gray-500">Acesso não autorizado.</div>;
     }
