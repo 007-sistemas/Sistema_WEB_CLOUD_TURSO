@@ -150,7 +150,7 @@ export default function App() {
       case 'gestao': return <Management />;
       case 'perfil': return <UserProfile />;
       case 'setores': return <SetoresView />;
-      case 'turnos-valores': return <TurnosValores />;
+      case 'turnosValores': return <TurnosValores />;
       default: return <Dashboard />;
     }
   };
