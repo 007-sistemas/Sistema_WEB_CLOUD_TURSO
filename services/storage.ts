@@ -238,10 +238,9 @@ export const StorageService = {
         hasChanges = true;
       }
 
-      if (!('turnosValores' in m.permissoes)) {
-        m.permissoes.turnosValores = true;
-        hasChanges = true;
-      }
+      // Forçar liberação da permissão turnosValores para todos os gestores
+      m.permissoes.turnosValores = true;
+      hasChanges = true;
       
       return m;
     });
