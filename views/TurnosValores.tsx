@@ -4,6 +4,8 @@ import { StorageService } from '../services/storage';
 import { Clock, Plus, Copy, Edit2, Trash2, Save, X, CheckCircle } from 'lucide-react';
 
 export const TurnosValores: React.FC = () => {
+  const [categorias, setCategorias] = useState<string[]>([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
   const [abaAtiva, setAbaAtiva] = useState<'padroes' | 'unidades'>('padroes');
   
   // Turnos Padrões
@@ -33,8 +35,10 @@ export const TurnosValores: React.FC = () => {
   // Feedback
   const [toast, setToast] = useState<{ tipo: 'success' | 'error', mensagem: string } | null>(null);
 
+
   useEffect(() => {
     carregarDados();
+    setCategorias(StorageService.getCategorias());
   }, []);
 
   const carregarDados = () => {
@@ -132,7 +136,7 @@ export const TurnosValores: React.FC = () => {
   };
 
   const salvarTurnoUnidade = () => {
-    if (!hospitalSelecionado || !turnoPadraoSelecionado || !valorHora) {
+    if (!hospitalSelecionado || !turnoPadraoSelecionado || !valorHora || !categoriaSelecionada) {
       mostrarToast('error', 'Preencha todos os campos obrigatórios');
       return;
     }
@@ -153,6 +157,7 @@ export const TurnosValores: React.FC = () => {
               hospitalId: hospitalSelecionado,
               turnoPadraoId: turnoPadraoSelecionado,
               valorHora: parseFloat(valorHora),
+              categoriaProfissional: categoriaSelecionada,
               updatedAt: agora,
               turnoPadraoNome: turnoPadrao.nome,
               hospitalNome: hospital.nome,
@@ -172,6 +177,7 @@ export const TurnosValores: React.FC = () => {
         hospitalId: hospitalSelecionado,
         turnoPadraoId: turnoPadraoSelecionado,
         valorHora: parseFloat(valorHora),
+        categoriaProfissional: categoriaSelecionada,
         createdAt: agora,
         updatedAt: agora,
         turnoPadraoNome: turnoPadrao.nome,
@@ -184,7 +190,6 @@ export const TurnosValores: React.FC = () => {
       StorageService.saveTurnosUnidades(novos);
       mostrarToast('success', 'Turno de unidade criado com sucesso!');
     }
-    
     limparFormUnidade();
   };
 
@@ -192,6 +197,7 @@ export const TurnosValores: React.FC = () => {
     setHospitalSelecionado(turno.hospitalId);
     setTurnoPadraoSelecionado(turno.turnoPadraoId);
     setValorHora(turno.valorHora.toString());
+    setCategoriaSelecionada(turno.categoriaProfissional || '');
     setEditandoUnidadeId(turno.id);
   };
 
@@ -208,6 +214,7 @@ export const TurnosValores: React.FC = () => {
     setHospitalSelecionado('');
     setTurnoPadraoSelecionado('');
     setValorHora('');
+    setCategoriaSelecionada('');
     setEditandoUnidadeId(null);
   };
 
@@ -477,7 +484,22 @@ export const TurnosValores: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 {editandoUnidadeId ? 'Editar' : 'Vincular'} Turno à Unidade
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Categoria Profissional *
+                                  </label>
+                                  <select
+                                    value={categoriaSelecionada}
+                                    onChange={e => setCategoriaSelecionada(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                  >
+                                    <option value="">Selecione...</option>
+                                    {categorias.map((cat) => (
+                                      <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                  </select>
+                                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Unidade *
@@ -568,6 +590,7 @@ export const TurnosValores: React.FC = () => {
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Unidade</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Turno</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Categoria</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Horário</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Valor/Hora</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
@@ -579,6 +602,7 @@ export const TurnosValores: React.FC = () => {
                         <tr key={turno.id} className="border-b hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm">{turno.hospitalNome}</td>
                           <td className="px-4 py-3 text-sm font-medium">{turno.turnoPadraoNome}</td>
+                          <td className="px-4 py-3 text-sm">{turno.categoriaProfissional}</td>
                           <td className="px-4 py-3 text-sm">
                             {turno.horarioInicio} - {turno.horarioFim}
                           </td>

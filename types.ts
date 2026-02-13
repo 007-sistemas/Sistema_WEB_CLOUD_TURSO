@@ -63,6 +63,7 @@ export interface TurnoUnidade {
   hospitalNome?: string;
   horarioInicio?: string;
   horarioFim?: string;
+  categoriaProfissional: string; // Categoria vinculada ao valor/hora
 }
 
 export interface HospitalPermissions {
