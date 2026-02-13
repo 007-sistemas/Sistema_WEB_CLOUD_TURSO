@@ -619,13 +619,13 @@ export const AutorizacaoPonto: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Hospital</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase">Unidade</label>
                   <select
                     className="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 bg-white"
                     value={filterHospital}
                     onChange={e => setFilterHospital(e.target.value)}
                   >
-                    <option value="">Todos os Hospitais</option>
+                    <option value="">Todas as unidades</option>
                     {hospitais.map(h => (
                       <option key={h.id} value={h.id}>{h.nome}</option>
                     ))}
@@ -668,7 +668,7 @@ export const AutorizacaoPonto: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3">Data Solicitação</th>
                     <th className="px-4 py-3">Cooperado</th>
-                    <th className="px-4 py-3">Hospital</th>
+                    <th className="px-4 py-3">Unidade</th>
                     <th className="px-4 py-3">Setor</th>
                     <th className="px-4 py-3">Data do Plantão</th>
                     <th className="px-4 py-3">Entrada / Saída</th>
