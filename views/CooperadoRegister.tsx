@@ -22,6 +22,9 @@ export const CooperadoRegister: React.FC = () => {
         { header: 'Categoria', key: 'categoriaProfissional' },
         { header: 'Status', key: 'status' },
         { header: 'Produção CPF', key: 'producaoPorCpf' },
+        { header: 'CPF', key: 'cpf' },
+        { header: 'Telefone', key: 'telefone' },
+        { header: 'E-mail', key: 'email' },
       ];
       try {
         const data = cooperados.map(c => {
