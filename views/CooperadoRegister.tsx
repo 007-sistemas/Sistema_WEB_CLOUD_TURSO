@@ -9,39 +9,42 @@ import XLSX from 'xlsx/dist/xlsx.full.min.js';
 
 export const CooperadoRegister: React.FC = () => {
 
-    // Exportar todos os cooperados para XLSX (com fallback para CSV)
+    // Exportar apenas colunas visíveis na tela
     const exportarCooperados = () => {
       if (!cooperados.length) {
         alert('Não há cooperados para exportar.');
         return;
       }
+      // Definir colunas visíveis
+      const columns = [
+        { header: 'Nome', key: 'nome' },
+        { header: 'Matrícula', key: 'matricula' },
+        { header: 'Categoria', key: 'categoriaProfissional' },
+        { header: 'Status', key: 'status' },
+        { header: 'Produção CPF', key: 'producaoPorCpf' },
+      ];
       try {
-        // Pega todas as chaves do primeiro cooperado (todas as colunas)
-        const allKeys = Array.from(new Set(cooperados.flatMap(c => Object.keys(c))));
-        // Monta os dados para exportação
         const data = cooperados.map(c => {
           const obj: any = {};
-          allKeys.forEach(k => {
-            let val = c[k];
-            if (Array.isArray(val)) val = JSON.stringify(val);
-            obj[k] = val ?? '';
+          columns.forEach(col => {
+            obj[col.header] = c[col.key] ?? '';
           });
           return obj;
         });
         const ws = XLSX.utils.json_to_sheet(data);
-        ws['!cols'] = allKeys.map(() => ({ wch: 20 }));
+        ws['!cols'] = columns.map(() => ({ wch: 20 }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Cooperados');
-        XLSX.writeFile(wb, 'cooperados_completo.xlsx');
+        XLSX.writeFile(wb, 'cooperados.xlsx');
       } catch (err) {
         // Fallback para CSV
         try {
-          const csv = [Object.keys(cooperados[0]).join(','), ...cooperados.map(c => Object.values(c).join(','))].join('\n');
+          const csv = [columns.map(c => c.header).join(','), ...cooperados.map(c => columns.map(col => c[col.key]).join(','))].join('\n');
           const blob = new Blob([csv], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'cooperados_completo.csv';
+          a.download = 'cooperados.csv';
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
