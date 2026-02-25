@@ -1,7 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Cooperado, StatusCooperado } from '../types';
 import { StorageService } from '../services/storage';
-import { Plus, Save, Search, Edit2, Trash2, X, Fingerprint, Briefcase, AlertCircle, Upload, Download, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Save, Search, Edit2, Trash2, X, Fingerprint, Briefcase, AlertCircle, Upload, Download, CheckCircle, AlertTriangle, FileSpreadsheet } from 'lucide-react';
+  // Exportar todos os cooperados para XLSX
+  const exportarCooperados = () => {
+    if (!cooperados.length) {
+      alert('Não há cooperados para exportar.');
+      return;
+    }
+    // Pega todas as chaves do primeiro cooperado (todas as colunas)
+    const allKeys = Array.from(new Set(cooperados.flatMap(c => Object.keys(c))));
+    // Monta os dados para exportação
+    const data = cooperados.map(c => {
+      const obj: any = {};
+      allKeys.forEach(k => {
+        let val = c[k];
+        if (Array.isArray(val)) val = JSON.stringify(val);
+        obj[k] = val ?? '';
+      });
+      return obj;
+    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = allKeys.map(() => ({ wch: 20 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cooperados');
+    XLSX.writeFile(wb, 'cooperados_completo.xlsx');
+  };
 import { parseCSV, validateAndPrepareImport, importCooperados, parseExcelFile } from '../services/csvParser';
 import { normalizeNome } from '../services/normalize';
 import * as XLSX from 'xlsx';
@@ -300,6 +324,14 @@ export const CooperadoRegister: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800">Cadastro de Cooperados</h2>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={exportarCooperados}
+            className="flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            title="Exportar todos os cooperados"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            <span>Exportar Planilha</span>
+          </button>
           <button 
             onClick={downloadTemplate}
             className="flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
