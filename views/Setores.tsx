@@ -48,14 +48,15 @@ export const SetoresView: React.FC = () => {
       const normalized = data.map((s) => ({ ...s, id: String(s.id) }));
       setSetores(normalized);
       setUseLocal(false);
-      // Exemplo: buscar status e vínculos
-      // TODO: Substituir por chamada real
-      // Aqui, simula que setores com id par têm vínculo
+      // Buscar status e vínculos reais
+      // Exemplo: busca registros de ponto e marca setores vinculados
+      const pontos = await apiGet<any[]>('pontos');
+      const setoresVinculados = new Set(pontos.map(p => String(p.setorId)).filter(Boolean));
       const fakeStatus: Record<string, 'ATIVO' | 'INATIVO'> = {};
       const fakeVinculos: Record<string, boolean> = {};
       normalized.forEach(s => {
         fakeStatus[s.id] = 'ATIVO';
-        fakeVinculos[s.id] = Number(s.id) % 2 === 0; // Simulação: id par tem vínculo
+        fakeVinculos[s.id] = setoresVinculados.has(s.id);
       });
       setStatusSetores(fakeStatus);
       setVinculos(fakeVinculos);
@@ -179,28 +180,28 @@ export const SetoresView: React.FC = () => {
           ⚠️ API indisponível. Usando armazenamento local (dados não persistem no Turso).
         </div>
       )}
-      <div className="flex gap-2 mb-6">
-        <input
-          className="border rounded px-3 py-2 flex-1"
-          placeholder="Pesquisar ou adicionar setor"
-          value={novoNome}
-          onChange={e => setNovoNome(e.target.value)}
-          disabled={loading}
-        />
-        <button
-          className="bg-green-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50"
-          onClick={handleAddSetor}
-          disabled={loading || !novoNome.trim() || setores.some(s => s.nome.toLowerCase() === novoNome.trim().toLowerCase())}
-        >
-          {loading ? 'Salvando...' : 'Novo Setor'}
-        </button>
-      </div>
+        <div className="flex gap-2 mb-6">
+          <input
+            className="border rounded px-3 py-2 flex-1"
+            placeholder="Pesquisar ou adicionar setor"
+            value={novoNome}
+            onChange={e => setNovoNome(e.target.value)}
+            disabled={loading}
+          />
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50"
+            onClick={handleAddSetor}
+            disabled={loading || !novoNome.trim() || setores.some(s => s.nome.toLowerCase() === novoNome.trim().toLowerCase())}
+          >
+            {loading ? 'Salvando...' : 'Novo Setor'}
+          </button>
+        </div>
       {loading && setores.length === 0 ? (
         <p className="text-gray-500 text-center">Carregando setores...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {setores
-            .filter(s => !searchNome || s.nome.toLowerCase().includes(searchNome.toLowerCase()))
+            .filter(s => !novoNome || s.nome.toLowerCase().includes(novoNome.toLowerCase()))
             .map((setor, index) => (
               <div key={setor.id} className="flex flex-col items-start p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
                 <span className="font-mono bg-primary-100 text-primary-700 px-3 py-1 rounded-lg text-sm font-semibold mb-2">
@@ -228,26 +229,24 @@ export const SetoresView: React.FC = () => {
                       </button>
                     </>
                   )}
-                  {vinculos[setor.id] && (
-                    <button
-                      onClick={async () => {
-                        const novoStatus = statusSetores[setor.id] === 'ATIVO' ? 'INATIVO' : 'ATIVO';
-                        setLoading(true);
-                        try {
-                          await apiPut('setores', { id: setor.id, status: novoStatus });
-                          setStatusSetores(prev => ({ ...prev, [setor.id]: novoStatus }));
-                        } catch (err) {
-                          alert('Erro ao atualizar status do setor');
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
-                      className={statusSetores[setor.id] === 'ATIVO' ? "bg-green-600 text-white px-4 py-2 rounded font-semibold" : "bg-red-600 text-white px-4 py-2 rounded font-semibold"}
-                      disabled={loading}
-                    >
-                      {statusSetores[setor.id] === 'ATIVO' ? 'Ativo' : 'Desativado'}
-                    </button>
-                  )}
+                  <button
+                    onClick={async () => {
+                      const novoStatus = statusSetores[setor.id] === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+                      setLoading(true);
+                      try {
+                        await apiPut('setores', { id: setor.id, status: novoStatus });
+                        setStatusSetores(prev => ({ ...prev, [setor.id]: novoStatus }));
+                      } catch (err) {
+                        alert('Erro ao atualizar status do setor');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className={statusSetores[setor.id] === 'ATIVO' ? "bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold border border-green-200" : "bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold border border-red-200"}
+                    disabled={loading}
+                  >
+                    {statusSetores[setor.id] === 'ATIVO' ? 'Ativo' : 'Desativado'}
+                  </button>
                 </div>
                 {vinculos[setor.id] && (
                   <span className="text-xs text-gray-500 mt-2">Setor vinculado a registros</span>
