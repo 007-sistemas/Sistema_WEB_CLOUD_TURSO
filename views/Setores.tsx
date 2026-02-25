@@ -49,17 +49,16 @@ export const SetoresView: React.FC = () => {
       setSetores(normalized);
       setUseLocal(false);
       // Buscar status e vínculos reais
-      // Exemplo: busca registros de ponto e marca setores vinculados
       const pontos = await apiGet<any[]>('pontos');
       const setoresVinculados = new Set(pontos.map(p => String(p.setorId)).filter(Boolean));
-      const fakeStatus: Record<string, 'ATIVO' | 'INATIVO'> = {};
-      const fakeVinculos: Record<string, boolean> = {};
+      const statusReal: Record<string, 'ATIVO' | 'INATIVO'> = {};
+      const vinculosReal: Record<string, boolean> = {};
       normalized.forEach(s => {
-        fakeStatus[s.id] = 'ATIVO';
-        fakeVinculos[s.id] = setoresVinculados.has(s.id);
+        statusReal[s.id] = (s.status === 'INATIVO') ? 'INATIVO' : 'ATIVO';
+        vinculosReal[s.id] = setoresVinculados.has(s.id);
       });
-      setStatusSetores(fakeStatus);
-      setVinculos(fakeVinculos);
+      setStatusSetores(statusReal);
+      setVinculos(vinculosReal);
     } catch (err) {
       console.warn('API indisponível, usando localStorage:', err);
       setSetores(getSetoresLocal());
