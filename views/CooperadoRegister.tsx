@@ -2,35 +2,57 @@ import React, { useState, useEffect } from 'react';
 import { Cooperado, StatusCooperado } from '../types';
 import { StorageService } from '../services/storage';
 import { Plus, Save, Search, Edit2, Trash2, X, Fingerprint, Briefcase, AlertCircle, Upload, Download, CheckCircle, AlertTriangle, ArrowDown } from 'lucide-react';
-  // Exportar todos os cooperados para XLSX
-  const exportarCooperados = () => {
-    if (!cooperados.length) {
-      alert('Não há cooperados para exportar.');
-      return;
-    }
-    // Pega todas as chaves do primeiro cooperado (todas as colunas)
-    const allKeys = Array.from(new Set(cooperados.flatMap(c => Object.keys(c))));
-    // Monta os dados para exportação
-    const data = cooperados.map(c => {
-      const obj: any = {};
-      allKeys.forEach(k => {
-        let val = c[k];
-        if (Array.isArray(val)) val = JSON.stringify(val);
-        obj[k] = val ?? '';
-      });
-      return obj;
-    });
-    const ws = XLSX.utils.json_to_sheet(data);
-    ws['!cols'] = allKeys.map(() => ({ wch: 20 }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Cooperados');
-    XLSX.writeFile(wb, 'cooperados_completo.xlsx');
-  };
+import * as XLSX from 'xlsx';
 import { parseCSV, validateAndPrepareImport, importCooperados, parseExcelFile } from '../services/csvParser';
 import { normalizeNome } from '../services/normalize';
 import XLSX from 'xlsx/dist/xlsx.full.min.js';
 
 export const CooperadoRegister: React.FC = () => {
+
+    // Exportar todos os cooperados para XLSX (com fallback para CSV)
+    const exportarCooperados = () => {
+      if (!cooperados.length) {
+        alert('Não há cooperados para exportar.');
+        return;
+      }
+      try {
+        // Pega todas as chaves do primeiro cooperado (todas as colunas)
+        const allKeys = Array.from(new Set(cooperados.flatMap(c => Object.keys(c))));
+        // Monta os dados para exportação
+        const data = cooperados.map(c => {
+          const obj: any = {};
+          allKeys.forEach(k => {
+            let val = c[k];
+            if (Array.isArray(val)) val = JSON.stringify(val);
+            obj[k] = val ?? '';
+          });
+          return obj;
+        });
+        const ws = XLSX.utils.json_to_sheet(data);
+        ws['!cols'] = allKeys.map(() => ({ wch: 20 }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Cooperados');
+        XLSX.writeFile(wb, 'cooperados_completo.xlsx');
+      } catch (err) {
+        // Fallback para CSV
+        try {
+          const csv = [Object.keys(cooperados[0]).join(','), ...cooperados.map(c => Object.values(c).join(','))].join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'cooperados_completo.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          alert('Exportação em XLSX falhou. Exportado como CSV.');
+        } catch (e) {
+          alert('Erro ao exportar cooperados. Verifique o console.');
+          console.error(e);
+        }
+      }
+    };
   const [cooperados, setCooperados] = useState<Cooperado[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
