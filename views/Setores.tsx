@@ -50,11 +50,12 @@ export const SetoresView: React.FC = () => {
       setUseLocal(false);
       // Exemplo: buscar status e vínculos
       // TODO: Substituir por chamada real
+      // Aqui, simula que setores com id par têm vínculo
       const fakeStatus: Record<string, 'ATIVO' | 'INATIVO'> = {};
       const fakeVinculos: Record<string, boolean> = {};
       normalized.forEach(s => {
         fakeStatus[s.id] = 'ATIVO';
-        fakeVinculos[s.id] = false;
+        fakeVinculos[s.id] = Number(s.id) % 2 === 0; // Simulação: id par tem vínculo
       });
       setStatusSetores(fakeStatus);
       setVinculos(fakeVinculos);
@@ -182,16 +183,9 @@ export const SetoresView: React.FC = () => {
         <input
           className="border rounded px-3 py-2 flex-1"
           placeholder="Pesquisar ou adicionar setor"
-          value={searchNome}
-          onChange={e => setSearchNome(e.target.value)}
-          disabled={loading}
-        />
-        <input
-          className="border rounded px-3 py-2 w-64"
-          placeholder="Novo setor"
           value={novoNome}
           onChange={e => setNovoNome(e.target.value)}
-          disabled={loading || setores.some(s => s.nome.toLowerCase() === novoNome.trim().toLowerCase())}
+          disabled={loading}
         />
         <button
           className="bg-green-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50"
@@ -212,44 +206,15 @@ export const SetoresView: React.FC = () => {
                 <span className="font-mono bg-primary-100 text-primary-700 px-3 py-1 rounded-lg text-sm font-semibold mb-2">
                   {index + 1}
                 </span>
-                {editingId === setor.id ? (
-                  <>
-                    <input
-                      className="border border-primary-300 rounded px-3 py-1 w-full mb-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                      value={editingNome}
-                      onChange={e => setEditingNome(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') handleSaveEdit(setor.id);
-                        if (e.key === 'Escape') handleCancelEdit();
-                      }}
-                      autoFocus
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleSaveEdit(setor.id)}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
-                        title="Salvar"
-                      >
-                        <Save className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                        title="Cancelar"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-medium text-gray-800 mb-2 w-full truncate">{setor.nome}</span>
-                    <div className="flex gap-2 mt-auto">
+                <span className="font-medium text-gray-800 mb-2 w-full truncate">{setor.nome}</span>
+                <div className="flex gap-2 mt-auto">
+                  {!vinculos[setor.id] && (
+                    <>
                       <button
                         onClick={() => handleEdit(setor)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title="Editar"
-                        disabled={loading || vinculos[setor.id]}
+                        disabled={loading}
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
@@ -257,24 +222,33 @@ export const SetoresView: React.FC = () => {
                         onClick={() => handleDelete(setor.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
                         title="Excluir"
-                        disabled={loading || vinculos[setor.id]}
+                        disabled={loading}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => {
-                          // Alterna status
-                          setStatusSetores(prev => ({ ...prev, [setor.id]: prev[setor.id] === 'ATIVO' ? 'INATIVO' : 'ATIVO' }));
-                        }}
-                        className={statusSetores[setor.id] === 'ATIVO' ? "p-2 text-green-700 hover:bg-green-50 rounded transition-colors" : "p-2 text-gray-500 hover:bg-gray-100 rounded transition-colors"}
-                        title={statusSetores[setor.id] === 'ATIVO' ? 'Desativar' : 'Ativar'}
-                        disabled={loading}
-                      >
-                        {statusSetores[setor.id] === 'ATIVO' ? '🟢' : '⚪'}
-                      </button>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
+                  {vinculos[setor.id] && (
+                    <button
+                      onClick={async () => {
+                        const novoStatus = statusSetores[setor.id] === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+                        setLoading(true);
+                        try {
+                          await apiPut('setores', { id: setor.id, status: novoStatus });
+                          setStatusSetores(prev => ({ ...prev, [setor.id]: novoStatus }));
+                        } catch (err) {
+                          alert('Erro ao atualizar status do setor');
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      className={statusSetores[setor.id] === 'ATIVO' ? "bg-green-600 text-white px-4 py-2 rounded font-semibold" : "bg-red-600 text-white px-4 py-2 rounded font-semibold"}
+                      disabled={loading}
+                    >
+                      {statusSetores[setor.id] === 'ATIVO' ? 'Ativo' : 'Desativado'}
+                    </button>
+                  )}
+                </div>
                 {vinculos[setor.id] && (
                   <span className="text-xs text-gray-500 mt-2">Setor vinculado a registros</span>
                 )}
