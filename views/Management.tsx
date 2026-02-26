@@ -154,6 +154,8 @@ export const Management: React.FC = () => {
     const newManager: Manager = {
       ...formData,
       id: formData.id || crypto.randomUUID(),
+      categoria: formData.categoria,
+      unidadesTomador: formData.unidadesTomador || [],
     };
 
     console.log('💾 Salvando gestor:', newManager.username, 'ID:', newManager.id, 'Permissões:', newManager.permissoes);
@@ -432,9 +434,9 @@ export const Management: React.FC = () => {
                           className="sr-only peer"
                           checked={formData.permissoes?.[perm.key] === true}
                           onChange={() => togglePermission(perm.key)}
-                          disabled={perm.key === 'gestao'}
+                          disabled={formData.categoria !== 'gestor'}
                         />
-                        <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                        <div className={`w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all ${formData.categoria !== 'gestor' ? 'opacity-50 cursor-not-allowed' : ''} peer-checked:bg-primary-600`}></div>
                       </label>
                     </div>
                   ))}
