@@ -159,21 +159,25 @@ export const HospitalRegister: React.FC = () => {
     }
     
     // Sincronizar setores com a API
-    if (tempSelectedSetores.length > 0) {
-      try {
-        console.log(`🏥 Sincronizando ${tempSelectedSetores.length} setores...`);
-        // Obter setores já associados (se for edição)
-        const setoresAtuais = await apiGet<Setor[]>(`hospital-setores?hospitalId=${newHospital.id}`).catch(() => []);
-        const idsAtuais = new Set(setoresAtuais.map(s => s.id));
-        const idsNovos = new Set(tempSelectedSetores.map(s => s.id));
+    try {
+      // Obter setores já associados (se for edição)
+      const setoresAtuais = await apiGet<Setor[]>(`hospital-setores?hospitalId=${newHospital.id}`).catch(() => []);
+      const idsAtuais = new Set(setoresAtuais.map(s => s.id));
+      const idsNovos = new Set(tempSelectedSetores.map(s => s.id));
 
+      // Remover todos os setores se nenhum estiver selecionado
+      if (tempSelectedSetores.length === 0) {
+        for (const id of idsAtuais) {
+          await apiDelete(`hospital-setores`, { hospitalId: newHospital.id, setorId: id });
+        }
+        console.log('✅ Todos os setores removidos do hospital!');
+      } else {
         // Remover setores desmarcados
         for (const id of idsAtuais) {
           if (!idsNovos.has(id)) {
             await apiDelete(`hospital-setores`, { hospitalId: newHospital.id, setorId: id });
           }
         }
-
         // Adicionar setores novos
         for (const setor of tempSelectedSetores) {
           if (!idsAtuais.has(setor.id)) {
@@ -182,10 +186,10 @@ export const HospitalRegister: React.FC = () => {
           }
         }
         console.log('✅ Setores sincronizados com sucesso!');
-      } catch (err) {
-        console.error('❌ Erro ao sincronizar setores:', err);
-        alert('⚠️ Setores não foram sincronizados com o servidor.');
       }
+    } catch (err) {
+      console.error('❌ Erro ao sincronizar setores:', err);
+      alert('⚠️ Setores não foram sincronizados com o servidor.');
     }
 
     loadHospitais();
