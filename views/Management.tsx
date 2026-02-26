@@ -266,110 +266,106 @@ export const Management: React.FC = () => {
           )}
           {formData && typeof formData === 'object' && formData.username && formData.cpf && (
             <form onSubmit={handleSave} className="space-y-6">
-            
-            {/* Credentials Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Nome Completo</label>
-                <input 
-                  required
-                  type="text" 
-                  className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  value={formData.username}
-                  onChange={e => setFormData({...formData, username: e.target.value})}
-                  placeholder="Digite o nome completo"
-                />
+              {/* Credentials Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Nome Completo</label>
+                  <input 
+                    required
+                    type="text" 
+                    className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                    value={formData.username}
+                    onChange={e => setFormData({...formData, username: e.target.value})}
+                    placeholder="Digite o nome completo"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <Lock className="h-3 w-3" /> Senha
+                  </label>
+                  <input 
+                    required
+                    type="text" 
+                    className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                    value={formData.password}
+                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    placeholder="Digite a senha..."
+                  />
+                </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <Lock className="h-3 w-3" /> Senha
-                </label>
-                <input 
-                  required
-                  type="text" 
-                  className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  value={formData.password}
-                  onChange={e => setFormData({...formData, password: e.target.value})}
-                  placeholder="Digite a senha..."
-               />
+              {/* Identity Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">CPF</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="000.000.000-00"
+                    className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                    value={formatCpf(formData.cpf)}
+                    onChange={e => {
+                      // Aceita só números, mas exibe formatado
+                      const raw = e.target.value.replace(/\D/g, '');
+                      setFormData(prev => ({
+                        ...prev,
+                        cpf: raw
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                    value={formData.email}
+                    onChange={e => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
               </div>
-            </div>
-
-            {/* Identity Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">CPF</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="000.000.000-00"
-                  className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  value={formatCpf(formData.cpf)}
-                  onChange={e => {
-                    // Aceita só números, mas exibe formatado
-                    const raw = e.target.value.replace(/\D/g, '');
-                    setFormData(prev => ({
-                      ...prev,
-                      cpf: raw
-                    }));
-                  }}
-                />
+              {/* Permissions Section */}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-3 text-gray-700 font-semibold border-b border-gray-200 pb-2">
+                  <Shield className="h-4 w-4" /> Permissões de Acesso
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                  {permissionLabels.map((perm) => (
+                    <div key={perm.key} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{perm.label}</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.permissoes?.[perm.key] === true}
+                          onChange={() => togglePermission(perm.key)}
+                          disabled={perm.key === 'gestao'}
+                        />
+                        <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Email</label>
-                <input
-                  required
-                  type="email"
-                  placeholder="email@exemplo.com"
-                  className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                />
+              <div className="flex justify-end space-x-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Salvar Gestor</span>
+                </button>
               </div>
-            </div>
-
-            {/* Permissions Section */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="flex items-center gap-2 mb-3 text-gray-700 font-semibold border-b border-gray-200 pb-2">
-                <Shield className="h-4 w-4" /> Permissões de Acesso
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
-                {permissionLabels.map((perm) => (
-                  <div key={perm.key} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">{perm.label}</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer"
-                        checked={formData.permissoes?.[perm.key] === true}
-                        onChange={() => togglePermission(perm.key)}
-                        disabled={perm.key === 'gestao'}
-                      />
-                      <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button"
-                onClick={handleCloseModal}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                type="submit"
-                className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-              >
-                <Save className="h-4 w-4" />
-                <span>Salvar Gestor</span>
-              </button>
-            </div>
-          </form>
+            </form>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
