@@ -35,29 +35,75 @@ export const Management: React.FC = () => {
   // Removido: estados de auditoria e consolidação
   const [duplicateManager, setDuplicateManager] = useState<Manager | null>(null);
   
-  const initialFormState: Manager = {
+  const initialFormState: Manager & { categoria?: string; unidadesTomador?: string[] } = {
     id: '',
-    username: '', // Será preenchido automaticamente com o CPF
+    username: '',
     password: '',
     cpf: '',
     email: '',
+    categoria: '', // Nova categoria
+    unidadesTomador: [], // Unidades para tomador
     permissoes: {
-      dashboard: true,
-      ponto: true,
-      relatorio: true,
-      relatorios: true,
-      cadastro: true,
-      hospitais: true,
-      biometria: true,
-      gestao: true,
-      espelho: true,
-      autorizacao: true,
-      perfil: true,
-      setores: true
+      dashboard: false,
+      ponto: false,
+      relatorio: false,
+      relatorios: false,
+      cadastro: false,
+      hospitais: false,
+      biometria: false,
+      gestao: false,
+      espelho: false,
+      autorizacao: false,
+      perfil: false,
+      setores: false,
+      turnosValores: false
     }
   };
   
-  const [formData, setFormData] = useState<Manager>(initialFormState);
+  const [formData, setFormData] = useState<Manager & { categoria?: string; unidadesTomador?: string[] }>(initialFormState);
+  // Lista de unidades (mock, pode ser buscado do StorageService.getHospitais())
+  const unidades = StorageService.getHospitais().map(h => ({ id: h.id, nome: h.nome }));
+
+  // Atualiza permissões conforme categoria
+  const handleCategoriaChange = (categoria: string) => {
+    let permissoes: HospitalPermissions = {
+      dashboard: false,
+      ponto: false,
+      relatorio: false,
+      relatorios: false,
+      cadastro: false,
+      hospitais: false,
+      biometria: false,
+      gestao: false,
+      espelho: false,
+      autorizacao: false,
+      perfil: false,
+      setores: false,
+      turnosValores: false
+    };
+    if (categoria === 'gestor') {
+      Object.keys(permissoes).forEach(k => permissoes[k as keyof HospitalPermissions] = true);
+    } else if (categoria === 'funcionario') {
+      Object.keys(permissoes).forEach(k => permissoes[k as keyof HospitalPermissions] = true);
+      permissoes.gestao = false;
+    } else if (categoria === 'tomador') {
+      permissoes.autorizacao = true;
+    }
+    setFormData(prev => ({ ...prev, categoria, permissoes }));
+  };
+
+  // Seleção de unidades para tomador
+  const handleUnidadesTomadorChange = (id: string) => {
+    setFormData(prev => {
+      const atual = prev.unidadesTomador || [];
+      return {
+        ...prev,
+        unidadesTomador: atual.includes(id)
+          ? atual.filter(u => u !== id)
+          : [...atual, id]
+      };
+    });
+  };
 
   useEffect(() => {
     loadManagers();
@@ -279,6 +325,21 @@ export const Management: React.FC = () => {
           )}
           {formData && typeof formData === 'object' && (
             <form onSubmit={handleSave} className="space-y-6">
+              {/* Categoria de usuário */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Categoria de Usuário <span className="text-red-500">*</span></label>
+                <select
+                  required
+                  className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                  value={formData.categoria || ''}
+                  onChange={e => handleCategoriaChange(e.target.value)}
+                >
+                  <option value="">Selecione...</option>
+                  <option value="gestor">Gestor</option>
+                  <option value="funcionario">Funcionário</option>
+                  <option value="tomador">Tomador</option>
+                </select>
+              </div>
               {/* Credentials Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -306,6 +367,24 @@ export const Management: React.FC = () => {
                   />
                 </div>
               </div>
+                        {/* Unidades para Tomador */}
+                        {formData.categoria === 'tomador' && (
+                          <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700">Unidades para autorizar justificativas</label>
+                            <div className="flex flex-wrap gap-2">
+                              {unidades.map(u => (
+                                <label key={u.id} className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg border border-gray-300">
+                                  <input
+                                    type="checkbox"
+                                    checked={formData.unidadesTomador?.includes(u.id)}
+                                    onChange={() => handleUnidadesTomadorChange(u.id)}
+                                  />
+                                  <span>{u.nome}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
               {/* Identity Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
