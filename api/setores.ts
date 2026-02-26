@@ -15,9 +15,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `;
       const nextId = nextIdRows[0]?.next_id ?? 1;
       const inserted = await sql`
-        INSERT INTO setores (id, nome, status)
-        VALUES (${nextId}, ${nome}, 'ATIVO')
-        RETURNING id, nome, status
+        INSERT INTO setores (id, nome)
+        VALUES (${nextId}, ${nome})
+        RETURNING id, nome
       `;
       return res.status(201).json(inserted[0]);
     } catch (e: any) {
@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const result = await sql`SELECT id, nome, status FROM setores ORDER BY nome ASC`;
+      const result = await sql`SELECT id, nome FROM setores ORDER BY nome ASC`;
       return res.status(200).json(result);
     } catch (e: any) {
       return res.status(500).json({ error: e.message });
@@ -35,17 +35,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'PUT') {
-    const { id, nome, status } = req.body;
+    const { id, nome } = req.body;
     if (!id) return res.status(400).json({ error: 'id obrigatório' });
     try {
-      if (nome && status) {
-        await sql`UPDATE setores SET nome = ${nome}, status = ${status} WHERE id = ${id}`;
-      } else if (nome) {
+      if (nome) {
         await sql`UPDATE setores SET nome = ${nome} WHERE id = ${id}`;
-      } else if (status) {
-        await sql`UPDATE setores SET status = ${status} WHERE id = ${id}`;
       }
-      const updated = await sql`SELECT id, nome, status FROM setores WHERE id = ${id}`;
+      const updated = await sql`SELECT id, nome FROM setores WHERE id = ${id}`;
       return res.status(200).json(updated[0]);
     } catch (e: any) {
       return res.status(500).json({ error: e.message });
