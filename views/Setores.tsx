@@ -206,47 +206,80 @@ export const SetoresView: React.FC = () => {
                 <span className="font-mono bg-primary-100 text-primary-700 px-3 py-1 rounded-lg text-sm font-semibold mb-2">
                   {index + 1}
                 </span>
-                <span className="font-medium text-gray-800 mb-2 w-full truncate">{setor.nome}</span>
-                <div className="flex gap-2 mt-auto">
-                  {!vinculos[setor.id] && (
-                    <>
+                {editingId === setor.id ? (
+                  <>
+                    <input
+                      className="border border-primary-300 rounded px-3 py-1 w-full mb-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                      value={editingNome}
+                      onChange={e => setEditingNome(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleSaveEdit(setor.id);
+                        if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
                       <button
-                        onClick={() => handleEdit(setor)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Editar"
-                        disabled={loading}
+                        onClick={() => handleSaveEdit(setor.id)}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
+                        title="Salvar"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Save className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(setor.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="Excluir"
+                        onClick={handleCancelEdit}
+                        className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        title="Cancelar"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-gray-800 mb-2 w-full truncate">{setor.nome}</span>
+                    <div className="flex gap-2 mt-auto">
+                      {!vinculos[setor.id] && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(setor)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Editar"
+                            disabled={loading}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(setor.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Excluir"
+                            disabled={loading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={async () => {
+                          const novoStatus = statusSetores[setor.id] === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+                          setLoading(true);
+                          try {
+                            await apiPut('setores', { id: setor.id, status: novoStatus });
+                            setStatusSetores(prev => ({ ...prev, [setor.id]: novoStatus }));
+                          } catch (err) {
+                            alert('Erro ao atualizar status do setor');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        className={statusSetores[setor.id] === 'ATIVO' ? "bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold border border-green-200" : "bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold border border-red-200"}
                         disabled={loading}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {statusSetores[setor.id] === 'ATIVO' ? 'Ativo' : 'Desativado'}
                       </button>
-                    </>
-                  )}
-                  <button
-                    onClick={async () => {
-                      const novoStatus = statusSetores[setor.id] === 'ATIVO' ? 'INATIVO' : 'ATIVO';
-                      setLoading(true);
-                      try {
-                        await apiPut('setores', { id: setor.id, status: novoStatus });
-                        setStatusSetores(prev => ({ ...prev, [setor.id]: novoStatus }));
-                      } catch (err) {
-                        alert('Erro ao atualizar status do setor');
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    className={statusSetores[setor.id] === 'ATIVO' ? "bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold border border-green-200" : "bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold border border-red-200"}
-                    disabled={loading}
-                  >
-                    {statusSetores[setor.id] === 'ATIVO' ? 'Ativo' : 'Desativado'}
-                  </button>
-                </div>
+                    </div>
+                  </>
+                )}
                 {vinculos[setor.id] && (
                   <span className="text-xs text-gray-500 mt-2">Setor vinculado a registros</span>
                 )}
