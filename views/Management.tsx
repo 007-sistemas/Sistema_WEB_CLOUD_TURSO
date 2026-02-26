@@ -271,13 +271,13 @@ export const Management: React.FC = () => {
             </button>
           </div>
           {/* Tratamento de erro para dados inválidos */}
-          {(!formData || typeof formData !== 'object' || !formData.username || !formData.cpf) && (
+          {(!formData || typeof formData !== 'object') && (
             <div className="bg-red-100 border border-red-300 text-red-700 rounded-lg p-4 mb-4 text-center">
               Erro ao carregar dados do gestor. Dados inválidos ou corrompidos.<br />
               Tente novamente ou limpe o cadastro.
             </div>
           )}
-          {formData && typeof formData === 'object' && formData.username && formData.cpf && (
+          {formData && typeof formData === 'object' && (
             <form onSubmit={handleSave} className="space-y-6">
               {/* Credentials Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
