@@ -77,8 +77,7 @@ export const SetoresView: React.FC = () => {
     }
     try {
       setLoading(true);
-      
-            if (useLocal) {
+      if (useLocal) {
         // Fallback: usar localStorage com ID numérico (string)
         const maxId = Math.max(0, ...setores.map(s => Number(s.id) || 0));
         const novoSetor: Setor = { id: String(maxId + 1), nome: novoNome.trim() };
@@ -86,10 +85,11 @@ export const SetoresView: React.FC = () => {
         setSetores(getSetoresLocal());
       } else {
         // API: POST só com o nome, backend gera o ID
-        const novoSetor = await apiPost<Setor>('setores', { nome: novoNome.trim() });
+        const novoSetor = await apiPost<any>('setores', { nome: novoNome.trim() });
         setSetores([...setores, { ...novoSetor, id: String(novoSetor.id) }]);
+        // Atualiza statusSetores para refletir o status retornado pela API
+        setStatusSetores(prev => ({ ...prev, [String(novoSetor.id)]: novoSetor.status === 'INATIVO' ? 'INATIVO' : 'ATIVO' }));
       }
-      
       setNovoNome('');
     } catch (err) {
       console.error('Erro ao criar setor:', err);
