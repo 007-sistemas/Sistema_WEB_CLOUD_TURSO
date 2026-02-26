@@ -29,7 +29,7 @@ export const Management: React.FC = () => {
   
   const initialFormState: Manager = {
     id: '',
-    username: '',
+    username: '', // Será preenchido automaticamente com o CPF
     password: '',
     cpf: '',
     email: '',
@@ -41,7 +41,6 @@ export const Management: React.FC = () => {
       cadastro: true,
       hospitais: true,
       biometria: true,
-      auditoria: true,
       gestao: true,
       espelho: true,
       autorizacao: true,
@@ -146,10 +145,8 @@ export const Management: React.FC = () => {
     // Recarrega do localStorage para garantir que tem os dados mais recentes
     const fresh = StorageService.getManagers().find(manager => manager.id === m.id);
     if (fresh) {
-      console.log('✅ Carregando dados frescos do gestor:', fresh.username, fresh.permissoes);
       setFormData(fresh);
     } else {
-      console.log('⚠️ Usando dados do cache:', m.username);
       setFormData(m);
     }
     setIsFormOpen(true);
@@ -172,13 +169,12 @@ export const Management: React.FC = () => {
     { key: 'ponto', label: 'Registrar Produção' },
     { key: 'relatorio', label: 'Controle de Produção' },
     { key: 'relatorios', label: 'Relatórios' },
-    { key: 'autorizacao', label: 'Aprovação de Ponto' },
+    { key: 'autorizacao', label: 'Justificativa de Plantão' },
     { key: 'cadastro', label: 'Cooperados' },
-    { key: 'hospitais', label: 'Unidades & Setores' },
+    { key: 'hospitais', label: 'Unidades' },
     { key: 'setores', label: 'Setores' },
     { key: 'turnosValores', label: 'Turnos' },
     { key: 'biometria', label: 'Biometria' },
-    { key: 'auditoria', label: 'Auditoria & Logs' },
     { key: 'gestao', label: 'Gestão de Usuários' },
     { key: 'perfil', label: 'Meu Perfil' },
   ];
@@ -267,14 +263,14 @@ export const Management: React.FC = () => {
             {/* Credentials Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Nome de Usuário</label>
+                <label className="text-sm font-medium text-gray-700">Nome Completo</label>
                 <input 
                   required
                   type="text" 
                   className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   value={formData.username}
                   onChange={e => setFormData({...formData, username: e.target.value})}
-                  placeholder="ex: gabriel"
+                  placeholder="Digite o nome completo"
                 />
               </div>
 
@@ -303,7 +299,14 @@ export const Management: React.FC = () => {
                   placeholder="000.000.000-00"
                   className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   value={formData.cpf}
-                  onChange={e => setFormData({...formData, cpf: e.target.value})}
+                  onChange={e => {
+                    const cpf = e.target.value;
+                    setFormData(prev => ({
+                      ...prev,
+                      cpf,
+                      username: cpf // username sempre igual ao CPF
+                    }));
+                  }}
                 />
               </div>
               <div className="space-y-1">
@@ -334,6 +337,7 @@ export const Management: React.FC = () => {
                         className="sr-only peer"
                         checked={formData.permissoes?.[perm.key] === true}
                         onChange={() => togglePermission(perm.key)}
+                        disabled={perm.key === 'gestao'}
                       />
                       <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
                     </label>
