@@ -15,9 +15,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `;
       const nextId = nextIdRows[0]?.next_id ?? 1;
       const inserted = await sql`
-        INSERT INTO setores (id, nome) 
-        VALUES (${nextId}, ${nome})
-        RETURNING id, nome
+        INSERT INTO setores (id, nome, status)
+        VALUES (${nextId}, ${nome}, 'ATIVO')
+        RETURNING id, nome, status
       `;
       return res.status(201).json(inserted[0]);
     } catch (e: any) {
