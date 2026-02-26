@@ -285,15 +285,15 @@ export const Layout: React.FC<LayoutProps> = ({
             <button
               key={perfilNavItem.id}
               onClick={() => onChangeView(perfilNavItem.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+              className={`w-full flex flex-col items-center justify-center px-4 py-3 rounded-lg transition-colors ${
                 currentView === perfilNavItem.id 
                   ? 'bg-primary-700 text-white shadow-lg' 
                   : 'text-primary-100 hover:bg-primary-800 hover:text-white'
               }`}
             >
-              <perfilNavItem.icon className="h-5 w-5" />
-              {/* Exibe nome e sobrenome do usuário logado */}
-              <span>
+              <perfilNavItem.icon className="h-6 w-6 mb-1" />
+              <span className="font-semibold text-base">Meu Perfil</span>
+              <span className="block text-xs mt-1 text-center w-full">
                 {(() => {
                   const session = StorageService.getSession();
                   if (session?.user?.nome) {
