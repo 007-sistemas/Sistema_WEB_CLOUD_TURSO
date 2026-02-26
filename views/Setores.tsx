@@ -201,15 +201,12 @@ export const SetoresView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {setores
             .filter(s => !novoNome || s.nome.toLowerCase().includes(novoNome.toLowerCase()))
-            .map((setor, index) => (
-              <div key={setor.id} className="flex flex-col items-start p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
-                <span className="font-mono bg-primary-100 text-primary-700 px-3 py-1 rounded-lg text-sm font-semibold mb-2">
-                  {index + 1}
-                </span>
+            .map((setor) => (
+              <div key={setor.id} className="flex flex-col items-center p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
                 {editingId === setor.id ? (
                   <>
                     <input
-                      className="border border-primary-300 rounded px-3 py-1 w-full mb-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                      className="border border-primary-300 rounded px-3 py-1 w-full mb-2 focus:ring-2 focus:ring-primary-500 outline-none text-center"
                       value={editingNome}
                       onChange={e => setEditingNome(e.target.value)}
                       onKeyDown={e => {
@@ -218,7 +215,7 @@ export const SetoresView: React.FC = () => {
                       }}
                       autoFocus
                     />
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-center">
                       <button
                         onClick={() => handleSaveEdit(setor.id)}
                         className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
@@ -237,8 +234,8 @@ export const SetoresView: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <span className="font-medium text-gray-800 mb-2 w-full truncate">{setor.nome}</span>
-                    <div className="flex gap-2 mt-auto">
+                    <span className="font-medium text-gray-800 mb-2 w-full break-words text-center" style={{ wordBreak: 'break-word', whiteSpace: 'pre-line' }}>{setor.nome}</span>
+                    <div className="flex gap-2 mt-auto justify-center">
                       {!vinculos[setor.id] && (
                         <>
                           <button
