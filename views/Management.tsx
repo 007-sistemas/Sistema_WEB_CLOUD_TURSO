@@ -1,3 +1,11 @@
+// Função para formatar CPF visualmente
+function formatCpf(cpf: string) {
+  const onlyNumbers = (cpf || '').replace(/\D/g, '').slice(0, 11);
+  return onlyNumbers
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
 
 import React, { useState, useEffect } from 'react';
 import { Manager, HospitalPermissions } from '../types';
