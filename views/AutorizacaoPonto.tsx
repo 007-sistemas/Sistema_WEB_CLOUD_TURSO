@@ -7,6 +7,11 @@ import { CheckCircle, XCircle, AlertCircle, Calendar, Clock, MapPin, User, Check
 import { exportJustificativasToExcel, exportJustificativasToPDF, ExportFilters, JustificativaStats } from '../services/reportExport';
 
 export const AutorizacaoPonto: React.FC = () => {
+    // Obter sessão e unidades do tomador
+    const session = StorageService.getSession();
+    const unidadesTomador = session?.user?.categoria === 'tomador' && Array.isArray(session?.user?.unidadesTomador)
+      ? session.user.unidadesTomador
+      : null;
   const [activeTab, setActiveTab] = useState<'pendentes' | 'historico'>('pendentes');
   const [pendingJustificativas, setPendingJustificativas] = useState<Justificativa[]>([]);
   const [allJustificativas, setAllJustificativas] = useState<Justificativa[]>([]);
@@ -34,7 +39,15 @@ export const AutorizacaoPonto: React.FC = () => {
       const remote = remoteRaw.map(j => j.status === 'Aguardando autorização' ? { ...j, status: 'Pendente' as const } : j);
       const pendingRemote = remote.filter(j => j.status === 'Pendente');
 
-      setPendingJustificativas(pendingRemote.sort((a, b) => 
+      let pendentes = pendingRemote;
+      // Filtrar pendentes para tomador
+      if (unidadesTomador && unidadesTomador.length > 0) {
+        pendentes = pendentes.filter(j => {
+          const hospitalId = j.hospitalId || (j.pontoId ? StorageService.getPontos().find(p => p.id === j.pontoId)?.hospitalId : null);
+          return hospitalId && unidadesTomador.includes(String(hospitalId));
+        });
+      }
+      setPendingJustificativas(pendentes.sort((a, b) => 
         new Date(a.dataSolicitacao).getTime() - new Date(b.dataSolicitacao).getTime()
       ));
 
@@ -102,6 +115,14 @@ export const AutorizacaoPonto: React.FC = () => {
       if (filterDataFim) {
         const justData = new Date(j.dataSolicitacao).toISOString().split('T')[0];
         if (justData > filterDataFim) return false;
+      }
+
+      // Filtro por unidade autorizada para tomador
+      if (unidadesTomador && unidadesTomador.length > 0) {
+        const hospitalId = j.hospitalId || (j.pontoId ? StorageService.getPontos().find(p => p.id === j.pontoId)?.hospitalId : null);
+        if (!hospitalId || !unidadesTomador.includes(String(hospitalId))) {
+          return false;
+        }
       }
 
       return true;
