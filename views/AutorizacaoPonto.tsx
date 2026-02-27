@@ -498,6 +498,7 @@ export const AutorizacaoPonto: React.FC = () => {
                       <tr>
                         <th className="px-4 py-3">Data Solicitação</th>
                         <th className="px-4 py-3">Cooperado</th>
+                        <th className="px-4 py-3">Unidade</th>
                         <th className="px-4 py-3">Data do Plantão</th>
                         <th className="px-4 py-3">Entrada / Saída</th>
                         <th className="px-4 py-3">Setor</th>
@@ -508,9 +509,22 @@ export const AutorizacaoPonto: React.FC = () => {
                     <tbody className="divide-y divide-gray-100">
                       {pendingJustificativas.map((just) => {
                         const pontoInfo = getPontoInfo(just);
+                        // Buscar nome da unidade
+                        let hospitalNome = '-';
+                        if (just.hospitalId) {
+                          const hosp = hospitais.find(h => String(h.id) === String(just.hospitalId));
+                          if (hosp) hospitalNome = hosp.nome;
+                        } else if (just.pontoId) {
+                          const ponto = StorageService.getPontos().find(p => p.id === just.pontoId);
+                          if (ponto) {
+                            const hosp = hospitais.find(h => String(h.id) === String(ponto.hospitalId));
+                            if (hosp) hospitalNome = hosp.nome;
+                          }
+                        }
                         return (
                           <tr key={just.id} className="hover:bg-amber-50/30 transition-colors group">
                             <td className="px-4 py-3">
+                                                          <td className="px-4 py-3 text-xs">{hospitalNome}</td>
                               <div className="flex flex-col text-xs">
                                   <span className="font-bold text-gray-800">
                                       {new Date(just.dataSolicitacao).toLocaleDateString()}
@@ -573,7 +587,7 @@ export const AutorizacaoPonto: React.FC = () => {
                               </div>
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center justify-end gap-2">
                                   <button 
                                       onClick={() => handleReject(just)}
                                       className="p-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors shadow-sm"

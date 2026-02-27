@@ -462,13 +462,28 @@ export const EspelhoBiometria: React.FC = () => {
       if (entrada.status === 'Rejeitado' || (saidaPareada?.status === 'Rejeitado')) {
         statusDisplay = 'Recusado';
         const rejPonto = entrada.status === 'Rejeitado' ? entrada : saidaPareada;
-        statusDetails = `${rejPonto?.rejeitadoPor || 'Gestor'}${rejPonto?.motivoRejeicao ? ': ' + rejPonto.motivoRejeicao : ''}`;
+        let nome = rejPonto?.rejeitadoPor || 'Gestor';
+        if (nome) {
+          const partes = nome.split(' ');
+          nome = partes.length > 1 ? `${partes[0]} ${partes[1]}` : partes[0];
+        }
+        statusDetails = `${nome}${rejPonto?.motivoRejeicao ? ': ' + rejPonto.motivoRejeicao : ''}`;
       } else if (saidaPareada && saidaPareada.status === 'Fechado' && saidaPareada.validadoPor) {
         statusDisplay = 'Fechado';
-        statusDetails = saidaPareada.validadoPor;
+        let nome = saidaPareada.validadoPor;
+        if (nome) {
+          const partes = nome.split(' ');
+          nome = partes.length > 1 ? `${partes[0]} ${partes[1]}` : partes[0];
+        }
+        statusDetails = nome;
       } else if (entrada.status === 'Fechado' && entrada.validadoPor) {
         statusDisplay = 'Fechado';
-        statusDetails = entrada.validadoPor;
+        let nome = entrada.validadoPor;
+        if (nome) {
+          const partes = nome.split(' ');
+          nome = partes.length > 1 ? `${partes[0]} ${partes[1]}` : partes[0];
+        }
+        statusDetails = nome;
       } else if (manualPair && !hasApproval) {
         statusDisplay = 'Aguardando Autorização';
       } else if (aguardandoEntrada || aguardandoSaida) {
@@ -496,10 +511,20 @@ export const EspelhoBiometria: React.FC = () => {
         let statusDetails = '';
         if (saida.status === 'Fechado' && saida.validadoPor) {
           statusDisplay = 'Fechado';
-          statusDetails = saida.validadoPor;
+          let nome = saida.validadoPor;
+          if (nome) {
+            const partes = nome.split(' ');
+            nome = partes.length > 1 ? `${partes[0]} ${partes[1]}` : partes[0];
+          }
+          statusDetails = nome;
         } else if (saida.status === 'Rejeitado' && saida.rejeitadoPor) {
           statusDisplay = 'Recusado';
-          statusDetails = `${saida.rejeitadoPor}${saida.motivoRejeicao ? ': ' + saida.motivoRejeicao : ''}`;
+          let nome = saida.rejeitadoPor;
+          if (nome) {
+            const partes = nome.split(' ');
+            nome = partes.length > 1 ? `${partes[0]} ${partes[1]}` : partes[0];
+          }
+          statusDetails = `${nome}${saida.motivoRejeicao ? ': ' + saida.motivoRejeicao : ''}`;
         } else if (isPendingStatus(saida.status)) {
           statusDisplay = 'Aguardando Autorização';
         }

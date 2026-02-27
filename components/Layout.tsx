@@ -155,12 +155,13 @@ export const Layout: React.FC<LayoutProps> = ({
 
   React.useEffect(() => {
     if (isTomador) {
-      // Tomador só vê Justificativa de Plantão
+      // Tomador vê Justificativa de Plantão e Meu Perfil
       setNavItems([
-        { id: 'autorizacao', label: 'Justificativa de Plantão', icon: CheckSquare, permissionKey: 'autorizacao' }
+        { id: 'autorizacao', label: 'Justificativa de Plantão', icon: CheckSquare, permissionKey: 'autorizacao' },
+        { id: 'perfil', label: 'Meu Perfil', icon: Wrench, permissionKey: 'perfil' }
       ]);
       setCadastrosItems([]);
-      setShowPerfil(false);
+      setShowPerfil(true);
       return;
     }
     const filtered = mainNavItems.filter(item => {
