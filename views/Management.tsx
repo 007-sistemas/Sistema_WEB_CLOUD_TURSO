@@ -17,6 +17,7 @@ export const Management: React.FC = () => {
   const [filterNome, setFilterNome] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterUnidade, setFilterUnidade] = useState('');
+  const [unidades, setUnidades] = useState<{id: string; nome: string}[]>([]);
 
   // Garante que todos os gestores tenham acesso a setores
   useEffect(() => {
@@ -33,6 +34,15 @@ export const Management: React.FC = () => {
       all.forEach(StorageService.saveManager);
     }
     setManagers(StorageService.getManagers());
+    
+    // Carregar unidades
+    try {
+      const hospitais = StorageService.getHospitais();
+      setUnidades(hospitais.map(h => ({ id: h.id, nome: h.nome })));
+    } catch (err) {
+      console.error('Erro ao carregar hospitais:', err);
+      setUnidades([]);
+    }
   }, []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   // Removido: estados de auditoria e consolidação
@@ -64,9 +74,7 @@ export const Management: React.FC = () => {
   };
   
   const [formData, setFormData] = useState<Manager & { categoria?: string; unidadesTomador?: string[] }>(initialFormState);
-  // Lista de unidades (mock, pode ser buscado do StorageService.getHospitais())
-  const unidades = StorageService.getHospitais().map(h => ({ id: h.id, nome: h.nome }));
-
+  
   // Atualiza permissões conforme categoria
   const handleCategoriaChange = (categoria: string) => {
     let permissoes: HospitalPermissions = {
@@ -261,7 +269,7 @@ export const Management: React.FC = () => {
   // Filtrar managers
   const managersFiltered = managers.filter(m => {
     // Filtro por nome
-    if (filterNome && !m.username.toLowerCase().includes(filterNome.toLowerCase())) {
+    if (filterNome && m.username && !m.username.toLowerCase().includes(filterNome.toLowerCase())) {
       return false;
     }
     // Filtro por categoria
@@ -270,7 +278,8 @@ export const Management: React.FC = () => {
     }
     // Filtro por unidade (apenas para tomadores)
     if (filterUnidade && m.categoria === 'tomador') {
-      if (!m.unidadesTomador?.includes(filterUnidade)) {
+      const unidadesDoManager = m.unidadesTomador || [];
+      if (!unidadesDoManager.includes(filterUnidade)) {
         return false;
       }
     }
