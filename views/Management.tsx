@@ -334,7 +334,7 @@ export const Management: React.FC = () => {
             className="flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <Plus className="h-4 w-4" />
-            <span>Novo Gestor</span>
+            <span>Novo Usuário</span>
           </button>
         </div>
       </div>
@@ -379,7 +379,7 @@ export const Management: React.FC = () => {
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 animate-fade-in max-w-3xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-gray-700">
-              {formData.id ? 'Editar Gestor' : 'Novo Gestor'}
+              {formData.id ? 'Editar Gestor' : 'Novo Usuário'}
             </h3>
             <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
               <X className="h-5 w-5" />
