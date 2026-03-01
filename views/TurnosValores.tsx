@@ -112,7 +112,7 @@ export const TurnosValores: React.FC = () => {
               type="text"
               value={formPadrao.nome}
               onChange={e => setFormPadrao({ ...formPadrao, nome: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -121,7 +121,7 @@ export const TurnosValores: React.FC = () => {
               type="time"
               value={formPadrao.horarioInicio}
               onChange={e => setFormPadrao({ ...formPadrao, horarioInicio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -130,7 +130,7 @@ export const TurnosValores: React.FC = () => {
               type="time"
               value={formPadrao.horarioFim}
               onChange={e => setFormPadrao({ ...formPadrao, horarioFim: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -139,7 +139,7 @@ export const TurnosValores: React.FC = () => {
               type="number"
               value={formPadrao.toleranciaAntes}
               onChange={e => setFormPadrao({ ...formPadrao, toleranciaAntes: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -148,14 +148,14 @@ export const TurnosValores: React.FC = () => {
               type="number"
               value={formPadrao.toleranciaDepois}
               onChange={e => setFormPadrao({ ...formPadrao, toleranciaDepois: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </div>
         <div className="flex gap-2 mb-6">
           <button
             onClick={salvarTurnoPadrao}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
           >
             <Save size={20} />
             {editandoPadraoId ? 'Atualizar' : 'Salvar'}
@@ -174,7 +174,7 @@ export const TurnosValores: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-purple-700 text-white">
+              <thead className="bg-primary-700 text-white">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Nome</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Horário Início</th>
@@ -259,7 +259,7 @@ export const TurnosValores: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Clock className="text-purple-600" size={32} />
+            <Clock className="text-primary-600" size={32} />
             <h1 className="text-3xl font-bold text-gray-800">Turnos</h1>
           </div>
           {abaAtiva === 'unidades' && (
@@ -290,7 +290,7 @@ export const TurnosValores: React.FC = () => {
                     value={formPadrao.nome}
                     onChange={(e) => setFormPadrao({ ...formPadrao, nome: e.target.value })}
                     placeholder="Ex: MT, N, T"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -301,7 +301,7 @@ export const TurnosValores: React.FC = () => {
                     type="time"
                     value={formPadrao.horarioInicio}
                     onChange={(e) => setFormPadrao({ ...formPadrao, horarioInicio: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -312,7 +312,7 @@ export const TurnosValores: React.FC = () => {
                     type="time"
                     value={formPadrao.horarioFim}
                     onChange={(e) => setFormPadrao({ ...formPadrao, horarioFim: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -323,7 +323,7 @@ export const TurnosValores: React.FC = () => {
                     type="number"
                     value={formPadrao.toleranciaAntes}
                     onChange={(e) => setFormPadrao({ ...formPadrao, toleranciaAntes: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -334,14 +334,14 @@ export const TurnosValores: React.FC = () => {
                     type="number"
                     value={formPadrao.toleranciaDepois}
                     onChange={(e) => setFormPadrao({ ...formPadrao, toleranciaDepois: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
                 <button
                   onClick={salvarTurnoPadrao}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                 >
                   <Save size={20} />
                   {editandoPadraoId ? 'Atualizar' : 'Salvar'}
@@ -362,7 +362,7 @@ export const TurnosValores: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-purple-700 text-white">
+                  <thead className="bg-primary-700 text-white">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Nome</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Horário Início</th>
@@ -429,7 +429,7 @@ export const TurnosValores: React.FC = () => {
                                   <select
                                     value={categoriaSelecionada}
                                     onChange={e => setCategoriaSelecionada(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                   >
                                     <option value="">Selecione...</option>
                                     {categorias.map((cat) => (
@@ -444,7 +444,7 @@ export const TurnosValores: React.FC = () => {
                   <select
                     value={hospitalSelecionado}
                     onChange={(e) => setHospitalSelecionado(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Selecione...</option>
                     {hospitais.map((h) => (
@@ -459,7 +459,7 @@ export const TurnosValores: React.FC = () => {
                   <select
                     value={turnoPadraoSelecionado}
                     onChange={(e) => handleTurnoPadraoChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Selecione...</option>
                     {turnosPadroes.map((t) => (
@@ -479,13 +479,13 @@ export const TurnosValores: React.FC = () => {
                     value={valorHora}
                     onChange={(e) => setValorHora(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
                 <div className="flex items-end">
                   <button
                     onClick={salvarTurnoUnidade}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                   >
                     <Save size={20} />
                     {editandoUnidadeId ? 'Atualizar' : 'Salvar'}
@@ -510,7 +510,7 @@ export const TurnosValores: React.FC = () => {
               <select
                 value={hospitalSelecionado}
                 onChange={(e) => setHospitalSelecionado(e.target.value)}
-                className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="">Todas as Unidades</option>
                 {hospitais.map((h) => (
@@ -523,7 +523,7 @@ export const TurnosValores: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-purple-700 text-white">
+                  <thead className="bg-primary-700 text-white">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Unidade</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Turno</th>
@@ -602,7 +602,7 @@ export const TurnosValores: React.FC = () => {
                   <select
                     value={hospitalOrigem}
                     onChange={(e) => setHospitalOrigem(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Selecione...</option>
                     {hospitais.map((h) => (
@@ -622,7 +622,7 @@ export const TurnosValores: React.FC = () => {
                           type="checkbox"
                           checked={hospitaisDestino.includes(h.id)}
                           onChange={() => toggleHospitalDestino(h.id)}
-                          className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                          className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                         />
                         <span className="text-sm">{h.nome}</span>
                       </label>
@@ -633,7 +633,7 @@ export const TurnosValores: React.FC = () => {
                 <div className="flex gap-2 pt-4">
                   <button
                     onClick={clonarConfiguracoes}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                   >
                     <Copy size={20} />
                     Clonar

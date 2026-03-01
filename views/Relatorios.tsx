@@ -624,25 +624,25 @@ export const Relatorios: React.FC = () => {
       <>
         {showExportModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md border border-purple-200 relative animate-fade-in">
+            <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md border border-primary-200 relative animate-fade-in">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
                 onClick={() => setShowExportModal(null)}
               >
                 <X className="w-6 h-6" />
               </button>
-              <h2 className="text-xl font-bold text-purple-700 mb-6 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-primary-700 mb-6 flex items-center gap-2">
                 {showExportModal === 'pdf' ? 'Exportar PDF' : 'Exportar Excel'}
               </h2>
               <div className="space-y-4">
                 <button
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded shadow transition-colors flex items-center justify-center"
+                  className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded shadow transition-colors flex items-center justify-center"
                   onClick={() => handleExport(showExportModal, 'geral')}
                 >
                   Relatório Geral
                 </button>
                 <button
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded shadow transition-colors flex items-center justify-center"
+                  className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded shadow transition-colors flex items-center justify-center"
                   onClick={() => handleExport(showExportModal, 'cooperado')}
                 >
                   Relatório por Cooperado
@@ -673,7 +673,7 @@ export const Relatorios: React.FC = () => {
       {/* FILTROS */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-purple-700">
+          <div className="flex items-center gap-2 text-primary-700">
             <Filter className="w-5 h-5" />
             <h3 className="font-semibold">Filtros de Relatório</h3>
           </div>
@@ -695,7 +695,7 @@ export const Relatorios: React.FC = () => {
             <select
               value={filterHospital}
               onChange={(e) => setFilterHospital(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="">Todas as Unidades</option>
               {hospitais.map(h => (
@@ -712,7 +712,7 @@ export const Relatorios: React.FC = () => {
             <select
               value={filterSetor}
               onChange={(e) => setFilterSetor(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               disabled={!filterHospital}
             >
               <option value="">Todos os Setores</option>
@@ -737,7 +737,7 @@ export const Relatorios: React.FC = () => {
               }}
               onFocus={() => setShowCooperadoSuggestions(true)}
               placeholder="Digite o nome..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             {showCooperadoSuggestions && filterCooperadoInput && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -750,7 +750,7 @@ export const Relatorios: React.FC = () => {
                         setFilterCooperadoInput(c.nome);
                         setShowCooperadoSuggestions(false);
                       }}
-                      className="px-3 py-2 hover:bg-purple-50 cursor-pointer"
+                      className="px-3 py-2 hover:bg-primary-50 cursor-pointer"
                     >
                       {c.nome} - {c.categoriaProfissional}
                     </div>
@@ -770,7 +770,7 @@ export const Relatorios: React.FC = () => {
             <select
               value={filterCategoria}
               onChange={(e) => setFilterCategoria(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="">Todas as Categorias</option>
               {categoriasProfissionais.map(cat => (
@@ -787,7 +787,7 @@ export const Relatorios: React.FC = () => {
                 type="date"
                 value={filterDataIni}
                 onChange={(e) => setFilterDataIni(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
             <div className="flex-1">
@@ -796,7 +796,7 @@ export const Relatorios: React.FC = () => {
                 type="date"
                 value={filterDataFim}
                 onChange={(e) => setFilterDataFim(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -805,7 +805,7 @@ export const Relatorios: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value as any)}
             >
@@ -860,7 +860,7 @@ export const Relatorios: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div className="bg-gray-50 p-3 rounded-lg shadow border border-gray-100 flex flex-col items-center">
           <div className="text-xs text-gray-500">Total de Registros</div>
-          <div className="text-xl font-bold text-purple-700">{relatorioData.length}</div>
+          <div className="text-xl font-bold text-primary-700">{relatorioData.length}</div>
         </div>
         <div className="bg-gray-50 p-3 rounded-lg shadow border border-gray-100 flex flex-col items-center">
           <div className="text-xs text-gray-500">Plantões Fechados</div>
@@ -884,7 +884,7 @@ export const Relatorios: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-purple-700 text-white">
+            <thead className="bg-primary-700 text-white">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Cooperado</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Categoria</th>
