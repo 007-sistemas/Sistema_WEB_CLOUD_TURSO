@@ -23,6 +23,14 @@ interface Props {
 
 const cleanCpf = (value?: string) => (value || '').replace(/\D/g, '');
 
+// Extrai apenas o primeiro e segundo nome de um nome completo
+const getFirstTwoNames = (fullName?: string): string => {
+  if (!fullName) return '';
+  const names = fullName.trim().split(' ');
+  if (names.length === 1) return names[0];
+  return `${names[0]} ${names[1]}`;
+};
+
 const resolveCooperado = (sessionUser: any, cooperadosList: Cooperado[]): Cooperado | null => {
   if (!sessionUser) return null;
   if (sessionUser.id) {
@@ -1347,6 +1355,21 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
                     onChange={e => setFilterDataFim(e.target.value)}
                 />
             </div>
+
+            {/* Status Filter - Apenas para mode=manager */}
+            {mode === 'manager' && (
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Status</label>
+                <select 
+                    className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                    value={showRecusadas ? 'todos' : 'abertosFechados'}
+                    onChange={e => setShowRecusadas(e.target.value === 'todos')}
+                >
+                    <option value="abertosFechados">Abertos e Fechados</option>
+                    <option value="todos">Todos (incl. Recusados)</option>
+                </select>
+            </div>
+            )}
         </div>
         
         <div className="mt-3 flex flex-col md:flex-row justify-between md:items-center gap-3">
@@ -1498,26 +1521,7 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3 text-center">Entrada</th>
                 <th className="px-4 py-3 text-center">Saída</th>
-                <th className="px-4 py-3 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <span>Status</span>
-                    {mode === 'manager' && (
-                      <div className="relative">
-                        <select
-                          value={showRecusadas ? 'todos' : 'abertosFechados'}
-                          onChange={e => setShowRecusadas(e.target.value === 'todos')}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white dark:bg-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition w-44 appearance-none pr-8 text-black dark:text-white"
-                        >
-                          <option value="abertosFechados" className="text-black dark:text-white">Abertos e Fechados</option>
-                          <option value="todos" className="text-black dark:text-white">Todos</option>
-                        </select>
-                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300">
-                          ▼
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </th>
+                <th className="px-4 py-3 text-center">Status</th>
                 {mode === 'cooperado' && <th className="px-4 py-3 text-center">Origem</th>}
               </tr>
             </thead>
@@ -1596,7 +1600,7 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
                             {label}
                           </span>
                           {detailsText && (
-                            <span className="text-[10px] text-gray-600 font-medium max-w-xs break-words text-center px-1">{detailsText}</span>
+                            <span className="text-[10px] text-gray-600 font-medium max-w-xs break-words text-center px-1">{getFirstTwoNames(detailsText)}</span>
                           )}
                         </div>
                       );

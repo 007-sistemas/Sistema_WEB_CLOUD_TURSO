@@ -915,7 +915,7 @@ export const Relatorios: React.FC = () => {
                   <tr key={idx} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm">{row.cooperadoNome}</td>
                     <td className="px-4 py-3 text-sm">{row.categoriaProfissional}</td>
-                    <td className="px-4 py-3 text-sm">{row.unidade}</td>
+                    <td className="px-4 py-3 text-sm">{row.hospital}</td>
                     <td className="px-4 py-3 text-sm">{row.setor}</td>
                     <td className="px-4 py-3 text-sm">{row.data}</td>
                     <td className="px-4 py-3 text-sm text-green-600 font-medium">{row.entrada}</td>
