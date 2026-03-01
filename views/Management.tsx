@@ -14,6 +14,9 @@ import { Plus, Save, Trash2, Edit2, Shield, Lock, X, Briefcase, AlertCircle } fr
 
 export const Management: React.FC = () => {
   const [managers, setManagers] = useState<Manager[]>([]);
+  const [filterNome, setFilterNome] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState('');
+  const [filterUnidade, setFilterUnidade] = useState('');
 
   // Garante que todos os gestores tenham acesso a setores
   useEffect(() => {
@@ -255,6 +258,25 @@ export const Management: React.FC = () => {
     });
   };
 
+  // Filtrar managers
+  const managersFiltered = managers.filter(m => {
+    // Filtro por nome
+    if (filterNome && !m.username.toLowerCase().includes(filterNome.toLowerCase())) {
+      return false;
+    }
+    // Filtro por categoria
+    if (filterCategoria && m.categoria !== filterCategoria) {
+      return false;
+    }
+    // Filtro por unidade (apenas para tomadores)
+    if (filterUnidade && m.categoria === 'tomador') {
+      if (!m.unidadesTomador?.includes(filterUnidade)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -465,30 +487,72 @@ export const Management: React.FC = () => {
         <div className="space-y-6">
           {/* Painel de auditoria/consolidação removido */}
 
+          {/* Filtros de Busca */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Usuário</label>
+                <input
+                  type="text"
+                  placeholder="Pesquisar por nome..."
+                  value={filterNome}
+                  onChange={e => setFilterNome(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                <select
+                  value={filterCategoria}
+                  onChange={e => setFilterCategoria(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Todas as categorias</option>
+                  <option value="gestor">Gestor</option>
+                  <option value="funcionario">Funcionário</option>
+                  <option value="tomador">Tomador</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unidade (Tomadores)</label>
+                <select
+                  value={filterUnidade}
+                  onChange={e => setFilterUnidade(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Todas as unidades</option>
+                  {unidades.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* Managers Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {managers.map(m => (
+          {managersFilteredFiltered.map(m => (
             <div key={m.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow group relative">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-primary-50 p-2 rounded-lg">
+              <div className="flex justify-between items-start mb-4 gap-3">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                  <div className="bg-primary-50 p-2 rounded-lg flex-shrink-0">
                     <Briefcase className="h-6 w-6 text-primary-600" />
                   </div>
-                  <div className="overflow-hidden">
+                  <div className="min-w-0 flex-1">
                      <h3 className="font-bold text-gray-800 truncate" title={m.username}>{m.username}</h3>
                      <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600 border border-gray-200">
-                          Gestor
+                          {m.categoria === 'gestor' ? 'Gestor' : m.categoria === 'funcionario' ? 'Funcionário' : m.categoria === 'tomador' ? 'Tomador' : 'Gestor'}
                         </span>
                      </div>
                   </div>
                 </div>
                 <div className="flex space-x-1 flex-shrink-0">
-                  <button onClick={() => handleEdit(m)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded">
+                  <button onClick={() => handleEdit(m)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors">
                     <Edit2 className="h-4 w-4" />
                   </button>
                   {m.id !== 'master-001' && (
-                    <button onClick={() => handleDelete(m.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded">
+                    <button onClick={() => handleDelete(m.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
                         <Trash2 className="h-4 w-4" />
                     </button>
                   )}
