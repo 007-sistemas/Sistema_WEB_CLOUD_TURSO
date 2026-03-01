@@ -117,10 +117,6 @@ export const Management: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    loadManagers();
-  }, []);
-
   const loadManagers = () => {
     setManagers(StorageService.getManagers());
   };
