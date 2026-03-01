@@ -75,6 +75,13 @@ export const Management: React.FC = () => {
     }
   }, []);
 
+  // Limpa filtro de unidade quando a categoria não é tomador
+  useEffect(() => {
+    if (filterCategoria !== 'tomador' && filterUnidade) {
+      setFilterUnidade('');
+    }
+  }, [filterCategoria]);
+
   // Atualiza permissões conforme categoria
   const handleCategoriaChange = (categoria: string) => {
     let permissoes: HospitalPermissions = {
@@ -494,7 +501,7 @@ export const Management: React.FC = () => {
 
           {/* Filtros de Busca */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${filterCategoria === 'tomador' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Usuário</label>
                 <input
@@ -518,19 +525,21 @@ export const Management: React.FC = () => {
                   <option value="tomador">Tomador</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Unidade (Tomadores)</label>
-                <select
-                  value={filterUnidade}
-                  onChange={e => setFilterUnidade(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">Todas as unidades</option>
-                  {unidades.map(u => (
-                    <option key={u.id} value={u.id}>{u.nome}</option>
-                  ))}
-                </select>
-              </div>
+              {filterCategoria === 'tomador' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unidade (Tomadores)</label>
+                  <select
+                    value={filterUnidade}
+                    onChange={e => setFilterUnidade(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Todas as unidades</option>
+                    {unidades.map(u => (
+                      <option key={u.id} value={u.id}>{u.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
