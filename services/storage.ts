@@ -119,14 +119,25 @@ export const StorageService = {
     const manager = managers.find(m => (m.username === usernameOrCode || m.cpf === usernameOrCode) && m.password === password);
     
     if (manager) {
-      // Garantir que permissão 'relatorios' existe
+      // Garantir permissões corretas baseadas na categoria
       const permissions = { ...manager.permissoes };
-      if (!('relatorios' in permissions)) {
-        permissions.relatorios = true;
+      
+      if (manager.categoria === 'tomador') {
+        // Tomador: apenas autorizacao e perfil
+        permissions.autorizacao = true;
+        permissions.perfil = true;
+        permissions.turnosValores = false;
+        permissions.setores = false;
+      } else {
+        // Gestor/Funcionário: garantir permissões obrigatórias
+        if (!('relatorios' in permissions)) {
+          permissions.relatorios = true;
+        }
+        if (!('turnosValores' in permissions)) {
+          permissions.turnosValores = true;
+        }
       }
-      if (!('turnosValores' in permissions)) {
-        permissions.turnosValores = true;
-      }
+      
       return { 
         type: 'MANAGER', 
         user: manager,
@@ -227,21 +238,47 @@ export const StorageService = {
         hasChanges = true;
       }
       
-      // Garantir que 'relatorios' existe
-      if (!('relatorios' in m.permissoes)) {
-        m.permissoes.relatorios = true;
-        hasChanges = true;
-      }
-      
-      // Garantir que 'setores' existe
-      if (!('setores' in m.permissoes)) {
-        m.permissoes.setores = true;
-        hasChanges = true;
-      }
+      // Para tomadores, garantir apenas permissões específicas
+      if (m.categoria === 'tomador') {
+        const permissoesCorretas: HospitalPermissions = {
+          dashboard: false,
+          ponto: false,
+          relatorio: false,
+          relatorios: false,
+          cadastro: false,
+          hospitais: false,
+          biometria: false,
+          gestao: false,
+          espelho: false,
+          autorizacao: true,
+          perfil: true,
+          setores: false,
+          turnosValores: false
+        };
+        
+        // Se as permissões não estão corretas, aplicar correção
+        if (JSON.stringify(m.permissoes) !== JSON.stringify(permissoesCorretas)) {
+          m.permissoes = permissoesCorretas;
+          hasChanges = true;
+        }
+      } else {
+        // Para gestores e funcionários, garantir permissões obrigatórias
+        if (!('relatorios' in m.permissoes)) {
+          m.permissoes.relatorios = true;
+          hasChanges = true;
+        }
+        
+        if (!('setores' in m.permissoes)) {
+          m.permissoes.setores = true;
+          hasChanges = true;
+        }
 
-      // Forçar liberação da permissão turnosValores para todos os gestores
-      m.permissoes.turnosValores = true;
-      hasChanges = true;
+        // Forçar liberação da permissão turnosValores apenas para gestores/funcionários
+        if (!m.permissoes.turnosValores) {
+          m.permissoes.turnosValores = true;
+          hasChanges = true;
+        }
+      }
       
       return m;
     });
@@ -379,9 +416,16 @@ export const StorageService = {
     
     console.log('[saveManager] ✅ Validações OK');
     
-    // Garante que todo gestor tenha acesso a setores
+    // Garante permissões corretas baseadas na categoria
     if (!manager.permissoes) manager.permissoes = {} as any;
-    manager.permissoes.setores = true;
+    
+    // Apenas gestores e funcionários têm acesso a setores
+    if (manager.categoria === 'gestor' || manager.categoria === 'funcionario' || !manager.categoria) {
+      manager.permissoes.setores = true;
+    } else if (manager.categoria === 'tomador') {
+      // Tomadores não devem ter setores
+      manager.permissoes.setores = false;
+    }
     
     const index = list.findIndex(m => m.id === manager.id);
     if (index >= 0) {
