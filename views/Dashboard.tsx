@@ -22,12 +22,20 @@ export const Dashboard: React.FC = () => {
   const [primaryColor, setPrimaryColor] = useState('#a855f7'); // fallback roxo
   
   useEffect(() => {
-    // Obter cor primária do CSS
-    const rootStyles = getComputedStyle(document.documentElement);
-    const primary600 = rootStyles.getPropertyValue('--color-primary-600').trim();
-    if (primary600) {
-      setPrimaryColor(primary600);
-    }
+    // Obter cor primária do CSS definida pelo usuário
+    const updatePrimaryColor = () => {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const primaryColorVar = rootStyles.getPropertyValue('--primary-color').trim();
+      if (primaryColorVar) {
+        setPrimaryColor(primaryColorVar);
+      }
+    };
+    
+    updatePrimaryColor();
+    
+    // Escuta mudanças no storage para atualizar a cor quando o usuário troca
+    window.addEventListener('storage', updatePrimaryColor);
+    return () => window.removeEventListener('storage', updatePrimaryColor);
   }, []);
   
   useEffect(() => {

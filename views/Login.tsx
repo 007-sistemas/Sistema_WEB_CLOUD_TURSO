@@ -33,6 +33,36 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     return () => clearInterval(t);
   }, [cooldown]);
 
+  // Aplicar preferências de tema e cor ao carregar a tela de login
+  useEffect(() => {
+    const applyUserPreferences = () => {
+      const prefs = StorageService.getUserPreferences();
+      if (!prefs) return;
+      
+      // Aplicar tema
+      if (prefs.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (prefs.theme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        // Auto: verificar horário (6h-18h = claro, 18h-6h = escuro)
+        const hour = new Date().getHours();
+        if (hour >= 6 && hour < 18) {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      }
+      
+      // Aplicar cor primária
+      if (prefs.primaryColor) {
+        document.documentElement.style.setProperty('--primary-color', prefs.primaryColor);
+      }
+    };
+    
+    applyUserPreferences();
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
 
     e.preventDefault();
@@ -170,8 +200,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700">
         <div className="text-center mb-0">
           <img src="/templates/iDev Logo Preto.png" alt="Idev" className="h-44 w-auto mx-auto" />
         </div>
@@ -185,12 +215,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         <form onSubmit={handleLogin} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700 ml-1">Usuário</label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Usuário</label>
             <div className="relative">
-              <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <User className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900 dark:text-white"
                 placeholder="Digite seu usuário"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -200,12 +230,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700 ml-1">Senha</label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Senha</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
               <input
                 type="password"
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900 dark:text-white"
                 placeholder="Digite sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -247,8 +277,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </form>
 
         {showReset && (
-          <div className="mt-6 border-t border-gray-200 pt-6 space-y-4">
-            <div className="flex items-center gap-2 text-gray-700">
+          <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6 space-y-4">
+            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <ShieldCheck className="h-4 w-4 text-primary-600" />
               <span className="font-semibold">Redefinir senha</span>
             </div>
@@ -267,12 +297,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700 ml-1">Usuário ou Email</label>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Usuário ou Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900 dark:text-white"
                     placeholder="Digite seu usuário ou email"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
@@ -283,10 +313,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               {resetStep === 'verify' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-gray-700 ml-1">Código</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Código</label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900 dark:text-white"
                       placeholder="Código de 6 dígitos"
                       value={resetCode}
                       onChange={(e) => {
@@ -316,20 +346,20 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               {resetStep === 'set' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-gray-700 ml-1">Nova senha</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Nova senha</label>
                     <input
                       type="password"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900 dark:text-white"
                       placeholder="Mínimo 8 caracteres, com maiúscula, minúscula e número"
                       value={newPass}
                       onChange={(e) => setNewPass(e.target.value)}
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-gray-700 ml-1">Confirmar nova senha</label>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Confirmar nova senha</label>
                     <input
                       type="password"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-gray-900 dark:text-white"
                       placeholder="Repita a nova senha"
                       value={confirmPass}
                       onChange={(e) => setConfirmPass(e.target.value)}
@@ -344,7 +374,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 <button
                   onClick={handleResetRequest}
                   disabled={cooldown > 0}
-                  className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${cooldown > 0 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
+                  className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${cooldown > 0 ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200'}`}
                 >
                   {cooldown > 0 ? `Reenviar em ${cooldown}s` : 'Enviar código'}
                 </button>
@@ -356,13 +386,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </button>
               </div>
               {provider && (
-                <div className="text-xs text-gray-500 mt-2">Envio: {provider.toUpperCase()}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Envio: {provider.toUpperCase()}</div>
               )}
             </div>
           </div>
         )}
 
-        <div className="mt-8 text-center text-xs text-gray-400">
+        <div className="mt-8 text-center text-xs text-gray-400 dark:text-gray-500">
           Idev &bull; Controle de Produção
         </div>
       </div>
