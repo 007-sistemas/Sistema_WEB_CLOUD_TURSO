@@ -91,9 +91,11 @@ export const Management: React.FC = () => {
         }
       });
       if (changed) {
-        all.forEach(StorageService.saveManager);
+        // Salva todos os managers de uma vez no localStorage
+        localStorage.setItem('biohealth_managers', JSON.stringify(all));
+        console.log('✅ Managers atualizados e salvos no localStorage');
       }
-      setManagers(StorageService.getManagers());
+      setManagers(all); // Usa os managers já processados
       
       // Carregar unidades
       const hospitais = StorageService.getHospitais();
