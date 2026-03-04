@@ -67,12 +67,13 @@ export async function onRequestPost(context: any) {
       args: [String(cooperado_id), String(hospital_id), dataAtual, observacao || null]
     });
     
-    console.log('[Cloudflare] Solicitação criada:', result.lastInsertRowid);
+    const insertId = result.lastInsertRowid ? Number(result.lastInsertRowid) : null;
+    console.log('[Cloudflare] Solicitação criada:', insertId);
     
     return new Response(JSON.stringify({ 
       success: true,
       message: 'Solicitação criada com sucesso',
-      id: result.lastInsertRowid 
+      id: insertId 
     }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
