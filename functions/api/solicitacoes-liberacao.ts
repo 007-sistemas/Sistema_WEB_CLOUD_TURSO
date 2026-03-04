@@ -98,11 +98,26 @@ export async function onRequestGet(context: any) {
   });
   
   try {
-    const url = new URL(context.request.url);
+    const url = new URL(request.url);
     const status = url.searchParams.get('status');
     const cooperado_id = url.searchParams.get('cooperado_id');
-    
-    let query = `
+
+    const whereClauses: string[] = [];
+    const params: any[] = [];
+
+    if (status) {
+      whereClauses.push(`status = ?`);
+      params.push(status);
+    }
+
+    if (cooperado_id) {
+      whereClauses.push(`cooperado_id = ?`);
+      params.push(cooperado_id);
+    }
+
+    const whereSql = whereClauses.length > 0 ? ` WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const queryWithJoin = `
       SELECT 
         s.*,
         c.nome as cooperado_nome,
@@ -111,26 +126,24 @@ export async function onRequestGet(context: any) {
       FROM solicitacoes_liberacao s
       LEFT JOIN cooperados c ON s.cooperado_id = c.id
       LEFT JOIN hospitals h ON s.hospital_id = h.id
-      WHERE 1=1
+      ${whereSql}
+      ORDER BY s.created_at DESC
     `;
-    
-    const params: any[] = [];
-    
-    if (status) {
-      query += ` AND s.status = ?`;
-      params.push(status);
+
+    try {
+      const result = await turso.execute({ sql: queryWithJoin, args: params });
+      return jsonResponse(result.rows);
+    } catch (joinError: any) {
+      console.warn('[Cloudflare] GET solicitacoes: fallback sem JOIN:', joinError?.message);
+      const queryFallback = `
+        SELECT *
+        FROM solicitacoes_liberacao
+        ${whereSql}
+        ORDER BY created_at DESC
+      `;
+      const fallbackResult = await turso.execute({ sql: queryFallback, args: params });
+      return jsonResponse(fallbackResult.rows);
     }
-    
-    if (cooperado_id) {
-      query += ` AND s.cooperado_id = ?`;
-      params.push(cooperado_id);
-    }
-    
-    query += ` ORDER BY s.created_at DESC`;
-    
-    const result = await turso.execute({ sql: query, args: params });
-    
-    return jsonResponse(result.rows);
   } catch (error: any) {
     return jsonResponse({ error: error.message }, 500);
   }
