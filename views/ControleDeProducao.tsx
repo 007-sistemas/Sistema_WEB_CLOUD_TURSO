@@ -1177,6 +1177,24 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
       return;
     }
 
+    // ===== VALIDAÇÃO: UNIDADE AUTORIZADA PARA JUSTIFICATIVA =====
+    if (cooperadoEfetivo?.unidadesJustificativa && 
+        cooperadoEfetivo.unidadesJustificativa.length > 0) {
+      const hospitalIdAsString = String(missingHospitalId);
+      const isAuthorized = cooperadoEfetivo.unidadesJustificativa.includes(hospitalIdAsString);
+      
+      if (!isAuthorized) {
+        const hospitalName = hospitais.find(h => String(h.id) === hospitalIdAsString)?.nome || 'Unidade desconhecida';
+        const authorizedNames = cooperadoEfetivo.unidadesJustificativa
+          .map(id => hospitais.find(h => String(h.id) === id)?.nome || `ID: ${id}`)
+          .join('\n• ');
+        console.warn('[submitMissingShift] ❌ Unidade não autorizada:', hospitalName, 'unidades autorizadas:', cooperadoEfetivo.unidadesJustificativa);
+        alert(`❌ Você não tem permissão para preencher justificativas na unidade "${hospitalName}".\n\nUnidades autorizadas:\n• ${authorizedNames}`);
+        return;
+      }
+    }
+    // ===== FIM VALIDAÇÃO =====
+
     const hospital = hospitais.find(h => String(h.id) === String(missingHospitalId));
     const localNome = hospital?.nome || 'Hospital não informado';
 
