@@ -1161,18 +1161,18 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
     setLoadingSolicitacao(true);
     try {
       await StorageService.criarSolicitacaoLiberacao({
-        cooperado_id: Number(cooperadoLogadoId),
-        hospital_id: Number(missingHospitalId),
+        cooperado_id: String(cooperadoLogadoId),
+        hospital_id: String(missingHospitalId),
         observacao: 'Solicitação de liberação para justificativa de plantão'
       });
       
       setShowModalSolicitacao(false);
+      setLoadingSolicitacao(false);
       alert('✅ Solicitação enviada com sucesso! Aguarde aprovação da gestão.');
     } catch (error: any) {
       console.error('Erro ao solicitar liberação:', error);
-      alert(error.message || 'Erro ao enviar solicitação. Tente novamente.');
-    } finally {
       setLoadingSolicitacao(false);
+      alert(error.message || 'Erro ao enviar solicitação. Tente novamente.');
     }
   };
 

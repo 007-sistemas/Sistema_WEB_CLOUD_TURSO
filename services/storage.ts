@@ -1256,8 +1256,8 @@ export const StorageService = {
   },
 
   criarSolicitacaoLiberacao: async (data: { 
-    cooperado_id: number; 
-    hospital_id: number; 
+    cooperado_id: string; 
+    hospital_id: string; 
     observacao?: string;
   }) => {
     try {

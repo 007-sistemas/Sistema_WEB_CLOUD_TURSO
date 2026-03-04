@@ -21,16 +21,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await turso.execute(`
       CREATE TABLE IF NOT EXISTS solicitacoes_liberacao (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        cooperado_id INTEGER NOT NULL,
-        hospital_id INTEGER NOT NULL,
+        cooperado_id TEXT NOT NULL,
+        hospital_id TEXT NOT NULL,
         data_solicitacao TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'pendente',
         data_resposta TEXT,
         respondido_por TEXT,
         observacao TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (cooperado_id) REFERENCES cooperados(id),
-        FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -167,20 +165,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
         
         if (cooperadoResult.rows.length > 0) {
-          let unidadesAtuais: number[] = [];
+          let unidadesAtuais: string[] = [];
           const unidadesStr = cooperadoResult.rows[0].unidades_justificativa;
           
           if (unidadesStr) {
             try {
               unidadesAtuais = JSON.parse(unidadesStr as string);
+              // Garantir que é array de strings
+              if (!Array.isArray(unidadesAtuais)) {
+                unidadesAtuais = [];
+              }
             } catch {
               unidadesAtuais = [];
             }
           }
           
           // Adicionar nova unidade se não existir
-          if (!unidadesAtuais.includes(Number(hospital_id))) {
-            unidadesAtuais.push(Number(hospital_id));
+          const hospitalIdStr = String(hospital_id);
+          if (!unidadesAtuais.includes(hospitalIdStr)) {
+            unidadesAtuais.push(hospitalIdStr);
             
             await turso.execute({
               sql: `UPDATE cooperados SET unidades_justificativa = ? WHERE id = ?`,

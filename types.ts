@@ -231,8 +231,8 @@ export interface SdkEventListener {
 
 export interface SolicitacaoLiberacao {
   id: number;
-  cooperado_id: number;
-  hospital_id: number;
+  cooperado_id: string;
+  hospital_id: string;
   data_solicitacao: string;
   status: 'pendente' | 'aprovado' | 'rejeitado';
   data_resposta?: string;
