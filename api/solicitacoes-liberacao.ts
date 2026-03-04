@@ -6,6 +6,12 @@ const turso = createClient({
   authToken: process.env.DATABASE_AUTH_TOKEN || '',
 });
 
+const toJsonSafe = <T>(value: T): T => {
+  return JSON.parse(
+    JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? Number(v) : v))
+  );
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -42,8 +48,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
       // Listar solicitações (com filtro opcional por status)
       const { status, cooperado_id } = req.query;
-      
-      let query = `
+
+      const whereClauses: string[] = [];
+      const params: any[] = [];
+
+      if (status) {
+        whereClauses.push(`status = ?`);
+        params.push(status);
+      }
+
+      if (cooperado_id) {
+        whereClauses.push(`cooperado_id = ?`);
+        params.push(cooperado_id);
+      }
+
+      const whereSql = whereClauses.length > 0 ? ` WHERE ${whereClauses.join(' AND ')}` : '';
+
+      const queryWithJoin = `
         SELECT 
           s.*,
           c.nome as cooperado_nome,
@@ -52,29 +73,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         FROM solicitacoes_liberacao s
         LEFT JOIN cooperados c ON s.cooperado_id = c.id
         LEFT JOIN hospitals h ON s.hospital_id = h.id
-        WHERE 1=1
+        ${whereSql}
+        ORDER BY s.created_at DESC
       `;
-      
-      const params: any[] = [];
-      
-      if (status) {
-        query += ` AND s.status = ?`;
-        params.push(status);
+
+      try {
+        const result = await turso.execute({
+          sql: queryWithJoin,
+          args: params
+        });
+        return res.status(200).json(toJsonSafe(result.rows));
+      } catch (joinError: any) {
+        console.warn('[solicitacoes-liberacao][GET] fallback sem JOIN:', joinError?.message);
+        const queryFallback = `
+          SELECT *
+          FROM solicitacoes_liberacao
+          ${whereSql}
+          ORDER BY created_at DESC
+        `;
+        const fallbackResult = await turso.execute({
+          sql: queryFallback,
+          args: params
+        });
+        return res.status(200).json(toJsonSafe(fallbackResult.rows));
       }
-      
-      if (cooperado_id) {
-        query += ` AND s.cooperado_id = ?`;
-        params.push(cooperado_id);
-      }
-      
-      query += ` ORDER BY s.created_at DESC`;
-      
-      const result = await turso.execute({
-        sql: query,
-        args: params
-      });
-      
-      return res.status(200).json(result.rows);
     }
 
     if (req.method === 'POST') {
@@ -128,7 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(201).json({ 
           success: true,
           message: 'Solicitação criada com sucesso',
-          id: result.lastInsertRowid 
+          id: result.lastInsertRowid ? Number(result.lastInsertRowid) : null
         });
       } catch (insertError: any) {
         console.error('[POST solicitacoes] Erro ao inserir:', insertError);
