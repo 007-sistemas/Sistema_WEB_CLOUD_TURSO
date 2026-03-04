@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StorageService } from '../services/storage';
-import { Justificativa, Setor } from '../types';
+import { Justificativa, Setor, SolicitacaoLiberacao } from '../types';
 import { apiGet, apiPost, syncToNeon } from '../services/api';
 import { CheckCircle, XCircle, AlertCircle, Calendar, Clock, MapPin, User, CheckSquare, Search, Filter, X, FileText, FileSpreadsheet } from 'lucide-react';
 import { exportJustificativasToExcel, exportJustificativasToPDF, ExportFilters, JustificativaStats } from '../services/reportExport';
@@ -14,9 +14,11 @@ export const AutorizacaoPonto: React.FC = () => {
       : null;
   const [activeTab, setActiveTab] = useState<'pendentes' | 'historico'>('pendentes');
   const [pendingJustificativas, setPendingJustificativas] = useState<Justificativa[]>([]);
+  const [pendingSolicitacoesLiberacao, setPendingSolicitacoesLiberacao] = useState<SolicitacaoLiberacao[]>([]);
   const [allJustificativas, setAllJustificativas] = useState<Justificativa[]>([]);
   const [setoresDisponiveis, setSetoresDisponiveis] = useState<Setor[]>([]);
   const [hospitais, setHospitais] = useState<any[]>([]);
+  const [isRespondendoSolicitacao, setIsRespondendoSolicitacao] = useState<number | null>(null);
   
   // Filtros do histórico
   const [filterCooperado, setFilterCooperado] = useState('');
@@ -81,6 +83,20 @@ export const AutorizacaoPonto: React.FC = () => {
     const hospitaisList = StorageService.getHospitais();
     setHospitais(hospitaisList);
 
+    // Carregar solicitações de liberação pendentes para gestor/funcionário
+    try {
+      const isTomador = session?.user?.categoria === 'tomador';
+      if (!isTomador) {
+        const solicitacoes = await StorageService.getSolicitacoesLiberacao({ status: 'pendente' });
+        setPendingSolicitacoesLiberacao(Array.isArray(solicitacoes) ? solicitacoes : []);
+      } else {
+        setPendingSolicitacoesLiberacao([]);
+      }
+    } catch (error) {
+      console.warn('[AutorizacaoPonto] Erro ao carregar solicitações de liberação:', error);
+      setPendingSolicitacoesLiberacao([]);
+    }
+
     // Carregar setores disponíveis
     const loadSetores = async () => {
       const allSetores: Setor[] = [];
@@ -95,6 +111,55 @@ export const AutorizacaoPonto: React.FC = () => {
       setSetoresDisponiveis(allSetores);
     };
     loadSetores();
+  };
+
+  const getHospitalNomeById = (hospitalId?: string) => {
+    if (!hospitalId) return '-';
+    const hospital = hospitais.find(h => String(h.id) === String(hospitalId));
+    return hospital?.nome || '-';
+  };
+
+  const responderSolicitacaoLiberacao = async (
+    solicitacao: SolicitacaoLiberacao,
+    status: 'aprovado' | 'rejeitado'
+  ) => {
+    const acao = status === 'aprovado' ? 'aprovar' : 'rejeitar';
+    if (!confirm(`Deseja ${acao} esta solicitação de liberação?`)) return;
+
+    const observacao = status === 'rejeitado'
+      ? prompt('Informe o motivo da rejeição:')
+      : prompt('Observação (opcional):') || undefined;
+
+    if (status === 'rejeitado' && (!observacao || !observacao.trim())) {
+      alert('Informe o motivo da rejeição.');
+      return;
+    }
+
+    const session = StorageService.getSession();
+    const respondidoPor =
+      session?.user?.username ||
+      session?.user?.nome ||
+      session?.user?.nomeCompleto ||
+      session?.user?.id ||
+      'Gestor';
+
+    try {
+      setIsRespondendoSolicitacao(Number(solicitacao.id));
+      await StorageService.responderSolicitacaoLiberacao({
+        id: Number(solicitacao.id),
+        status,
+        respondido_por: respondidoPor,
+        observacao: observacao?.trim() || undefined,
+      });
+
+      alert(`Solicitação ${status === 'aprovado' ? 'aprovada' : 'rejeitada'} com sucesso!`);
+      await loadData();
+    } catch (error) {
+      console.error('[AutorizacaoPonto] Erro ao responder solicitação:', error);
+      alert('Erro ao responder solicitação de liberação.');
+    } finally {
+      setIsRespondendoSolicitacao(null);
+    }
   };
 
   // Filtrar justificativas do histórico
@@ -445,6 +510,8 @@ export const AutorizacaoPonto: React.FC = () => {
     }
   };
 
+  const totalPendentes = pendingJustificativas.length + pendingSolicitacoesLiberacao.length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3">
@@ -470,7 +537,7 @@ export const AutorizacaoPonto: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
-              Pendentes {pendingJustificativas.length > 0 && `(${pendingJustificativas.length})`}
+              Pendentes {totalPendentes > 0 && `(${totalPendentes})`}
             </div>
           </button>
           <button
@@ -494,13 +561,71 @@ export const AutorizacaoPonto: React.FC = () => {
         {activeTab === 'pendentes' ? (
           // --- ABA PENDENTES ---
           <>
-            {pendingJustificativas.length === 0 ? (
+            {pendingJustificativas.length === 0 && pendingSolicitacoesLiberacao.length === 0 ? (
                 <div className="p-12 text-center text-gray-400 flex flex-col items-center">
                     <CheckCircle className="h-16 w-16 mb-4 text-green-100" />
                     <span className="text-lg font-medium text-gray-600">Tudo em dia!</span>
                     <span className="text-sm">Nenhuma solicitação pendente de autorização.</span>
                 </div>
             ) : (
+                <div>
+                  {pendingSolicitacoesLiberacao.length > 0 && (
+                    <div className="border-b border-gray-200">
+                      <div className="px-4 py-3 bg-amber-50 border-b border-amber-100">
+                        <h3 className="text-sm font-semibold text-amber-800">
+                          Solicitações de Liberação de Unidade ({pendingSolicitacoesLiberacao.length})
+                        </h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-gray-600">
+                          <thead className="bg-amber-50/60 text-gray-700 font-semibold border-b border-gray-200">
+                            <tr>
+                              <th className="px-4 py-3">Data Solicitação</th>
+                              <th className="px-4 py-3">Cooperado</th>
+                              <th className="px-4 py-3">Unidade</th>
+                              <th className="px-4 py-3">Observação</th>
+                              <th className="px-4 py-3 text-right">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {pendingSolicitacoesLiberacao.map((sol) => (
+                              <tr key={`sol-${sol.id}`} className="hover:bg-gray-50">
+                                <td className="px-4 py-3">
+                                  {new Date(sol.data_solicitacao).toLocaleDateString('pt-BR')} {new Date(sol.data_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="font-medium text-gray-900">{sol.cooperado_nome || sol.cooperado_id}</div>
+                                  {sol.cooperado_cpf && <div className="text-xs text-gray-500">CPF: {sol.cooperado_cpf}</div>}
+                                </td>
+                                <td className="px-4 py-3">{sol.hospital_nome || getHospitalNomeById(sol.hospital_id)}</td>
+                                <td className="px-4 py-3 max-w-xs truncate" title={sol.observacao || ''}>
+                                  {sol.observacao || '-'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex gap-2 justify-end">
+                                    <button
+                                      onClick={() => responderSolicitacaoLiberacao(sol, 'aprovado')}
+                                      disabled={isRespondendoSolicitacao === Number(sol.id)}
+                                      className="px-3 py-1.5 rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      Aprovar
+                                    </button>
+                                    <button
+                                      onClick={() => responderSolicitacaoLiberacao(sol, 'rejeitado')}
+                                      disabled={isRespondendoSolicitacao === Number(sol.id)}
+                                      className="px-3 py-1.5 rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                                    >
+                                      Rejeitar
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-600">
                     <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
@@ -533,7 +658,6 @@ export const AutorizacaoPonto: React.FC = () => {
                         return (
                           <tr key={just.id} className="hover:bg-amber-50/30 transition-colors group">
                             <td className="px-4 py-3">
-                                                          <td className="px-4 py-3 text-xs">{hospitalNome}</td>
                               <div className="flex flex-col text-xs">
                                   <span className="font-bold text-gray-800">
                                       {new Date(just.dataSolicitacao).toLocaleDateString()}
@@ -549,6 +673,7 @@ export const AutorizacaoPonto: React.FC = () => {
                                   <span className="font-medium text-gray-900">{just.cooperadoNome}</span>
                               </div>
                             </td>
+                            <td className="px-4 py-3 text-xs">{hospitalNome}</td>
                             <td className="px-4 py-3">
                               {pontoInfo ? (
                                 <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
@@ -619,6 +744,7 @@ export const AutorizacaoPonto: React.FC = () => {
                       })}
                     </tbody>
                   </table>
+                </div>
                 </div>
             )}
           </>

@@ -41,6 +41,7 @@ export const Management: React.FC = () => {
       espelho: false,
       autorizacao: false,
       perfil: false,
+      solicitacoesLiberacao: false,
       setores: false,
       turnosValores: false
     }
@@ -128,6 +129,7 @@ export const Management: React.FC = () => {
       espelho: false,
       autorizacao: false,
       perfil: false,
+      solicitacoesLiberacao: false,
       setores: false,
       turnosValores: false
     };
@@ -278,6 +280,7 @@ export const Management: React.FC = () => {
     { key: 'relatorio', label: 'Controle de Produção' },
     { key: 'relatorios', label: 'Relatórios' },
     { key: 'autorizacao', label: 'Justificativa de Plantão' },
+    { key: 'solicitacoesLiberacao', label: 'Solicitações de Liberação' },
     { key: 'cadastro', label: 'Cooperados' },
     { key: 'hospitais', label: 'Unidades' },
     { key: 'setores', label: 'Setores' },

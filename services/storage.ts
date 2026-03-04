@@ -248,10 +248,13 @@ export const StorageService = {
           cadastro: false,
           hospitais: false,
           biometria: false,
+          auditoria: false,
           gestao: false,
+          testes: false,
           espelho: false,
           autorizacao: true,
           perfil: true,
+          solicitacoesLiberacao: false,
           setores: false,
           turnosValores: false
         };
@@ -265,6 +268,11 @@ export const StorageService = {
         // Para gestores e funcionários, garantir permissões obrigatórias
         if (!('relatorios' in m.permissoes)) {
           m.permissoes.relatorios = true;
+          hasChanges = true;
+        }
+
+        if (!('solicitacoesLiberacao' in m.permissoes)) {
+          m.permissoes.solicitacoesLiberacao = true;
           hasChanges = true;
         }
         
