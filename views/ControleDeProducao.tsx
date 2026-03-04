@@ -1422,7 +1422,10 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
               >
                 <option value="">Selecione</option>
                 {hospitais.map(h => (
-                  <option key={h.id} value={h.id}>{h.nome}</option>
+                  <option key={h.id} value={h.id}>
+                    {h.nome}
+                    {possuiRestricaoPorUnidade && !unidadesAutorizadasJustificativa.includes(String(h.id)) ? ' 🔒' : ''}
+                  </option>
                 ))}
               </select>
             </div>
