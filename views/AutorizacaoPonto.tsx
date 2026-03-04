@@ -18,6 +18,7 @@ export const AutorizacaoPonto: React.FC = () => {
   const [allJustificativas, setAllJustificativas] = useState<Justificativa[]>([]);
   const [setoresDisponiveis, setSetoresDisponiveis] = useState<Setor[]>([]);
   const [hospitais, setHospitais] = useState<any[]>([]);
+  const [cooperados, setCooperados] = useState<any[]>([]);
   const [isRespondendoSolicitacao, setIsRespondendoSolicitacao] = useState<number | null>(null);
   
   // Filtros do histórico
@@ -79,9 +80,12 @@ export const AutorizacaoPonto: React.FC = () => {
       ));
     }
 
-    // Carregar hospitais
+    // Carregar hospitais e cooperados
     const hospitaisList = StorageService.getHospitais();
     setHospitais(hospitaisList);
+
+    const cooperadosList = StorageService.getCooperados();
+    setCooperados(cooperadosList);
 
     // Carregar solicitações de liberação pendentes para gestor/funcionário
     try {
@@ -117,6 +121,12 @@ export const AutorizacaoPonto: React.FC = () => {
     if (!hospitalId) return '-';
     const hospital = hospitais.find(h => String(h.id) === String(hospitalId));
     return hospital?.nome || '-';
+  };
+
+  const getCooperadoNomeById = (cooperadoId?: string) => {
+    if (!cooperadoId) return '-';
+    const cooperado = cooperados.find(c => String(c.id) === String(cooperadoId));
+    return cooperado?.nomeCompleto || cooperado?.nome || '-';
   };
 
   const responderSolicitacaoLiberacao = async (
@@ -594,7 +604,7 @@ export const AutorizacaoPonto: React.FC = () => {
                                   {new Date(sol.data_solicitacao).toLocaleDateString('pt-BR')} {new Date(sol.data_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                 </td>
                                 <td className="px-4 py-3">
-                                  <div className="font-medium text-gray-900">{sol.cooperado_nome || sol.cooperado_id}</div>
+                                  <div className="font-medium text-gray-900">{sol.cooperado_nome || getCooperadoNomeById(sol.cooperado_id)}</div>
                                   {sol.cooperado_cpf && <div className="text-xs text-gray-500">CPF: {sol.cooperado_cpf}</div>}
                                 </td>
                                 <td className="px-4 py-3">{sol.hospital_nome || getHospitalNomeById(sol.hospital_id)}</td>
