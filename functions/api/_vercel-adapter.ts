@@ -85,7 +85,9 @@ export async function handleVercelFunction(
     },
     json: (data: any) => {
       state.headers.set('Content-Type', 'application/json');
-      state.body = JSON.stringify(data);
+      state.body = JSON.stringify(data, (_key, value) =>
+        typeof value === 'bigint' ? Number(value) : value
+      );
       state.ended = true;
       return res;
     },
