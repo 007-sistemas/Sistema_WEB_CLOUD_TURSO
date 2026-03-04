@@ -23,14 +23,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try { await sql`ALTER TABLE cooperados ADD COLUMN IF NOT EXISTS specialty text`; } catch {}
       try { await sql`ALTER TABLE cooperados ADD COLUMN IF NOT EXISTS status text`; } catch {}
       try { await sql`ALTER TABLE cooperados ADD COLUMN IF NOT EXISTS producao_por_cpf text DEFAULT 'Não'`; } catch {}
+      try { await sql`ALTER TABLE cooperados ADD COLUMN IF NOT EXISTS unidades_justificativa text DEFAULT '[]'`; } catch {}
       try { await sql`ALTER TABLE cooperados ADD COLUMN IF NOT EXISTS updated_at text DEFAULT CURRENT_TIMESTAMP`; } catch {}
       try { await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_cooperados_id ON cooperados(id)`; } catch {}
 
       let rows: any[] = [];
       try {
-        rows = await sql`SELECT id, name, cpf, email, phone, specialty, matricula, status, producao_por_cpf, updated_at FROM cooperados ORDER BY updated_at DESC LIMIT 200`;
+        rows = await sql`SELECT id, name, cpf, email, phone, specialty, matricula, status, producao_por_cpf, unidades_justificativa, updated_at FROM cooperados ORDER BY updated_at DESC LIMIT 200`;
       } catch {
-        rows = await sql`SELECT id, name, cpf, email, phone, specialty, matricula, status, producao_por_cpf, updated_at FROM cooperados LIMIT 200`;
+        rows = await sql`SELECT id, name, cpf, email, phone, specialty, matricula, status, producao_por_cpf, unidades_justificativa, updated_at FROM cooperados LIMIT 200`;
       }
       res.status(200).json(rows);
       return;

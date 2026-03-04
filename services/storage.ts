@@ -464,19 +464,38 @@ export const StorageService = {
       const rows = await apiGet<any[]>('cooperados');
       if (!Array.isArray(rows)) return;
 
-      const mapped: Cooperado[] = rows.map((row: any) => ({
-        id: row.id,
-        nome: row.name || row.nome || '',
-        cpf: row.cpf || '',
-        matricula: row.matricula || '',
-        categoriaProfissional: row.specialty || row.categoriaProfissional || '',
-        telefone: row.phone || row.telefone || '',
-        email: row.email || '',
-        status: row.status || StatusCooperado.ATIVO,
-        producaoPorCpf: row.producao_por_cpf || row.producaoPorCpf || 'Não',
-        biometrias: row.biometrias || [],
-        updatedAt: row.updated_at || new Date().toISOString()
-      }));
+      const mapped: Cooperado[] = rows.map((row: any) => {
+        let unidadesJustificativa: string[] = [];
+        const rawUnidades = row.unidades_justificativa ?? row.unidadesJustificativa;
+
+        if (Array.isArray(rawUnidades)) {
+          unidadesJustificativa = rawUnidades.map((u: any) => String(u));
+        } else if (typeof rawUnidades === 'string' && rawUnidades.trim()) {
+          try {
+            const parsed = JSON.parse(rawUnidades);
+            if (Array.isArray(parsed)) {
+              unidadesJustificativa = parsed.map((u: any) => String(u));
+            }
+          } catch {
+            unidadesJustificativa = [];
+          }
+        }
+
+        return {
+          id: row.id,
+          nome: row.name || row.nome || '',
+          cpf: row.cpf || '',
+          matricula: row.matricula || '',
+          categoriaProfissional: row.specialty || row.categoriaProfissional || '',
+          telefone: row.phone || row.telefone || '',
+          email: row.email || '',
+          status: row.status || StatusCooperado.ATIVO,
+          producaoPorCpf: row.producao_por_cpf || row.producaoPorCpf || 'Não',
+          biometrias: row.biometrias || [],
+          unidadesJustificativa,
+          updatedAt: row.updated_at || new Date().toISOString()
+        };
+      });
 
       // Substitui completamente o localStorage com dados do Neon
       // Garante que IDs, deletados, etc. fiquem sincronizados
@@ -492,7 +511,8 @@ export const StorageService = {
     const list = data ? JSON.parse(data) : [];
     return list.map((c: Cooperado) => ({
       ...c,
-      producaoPorCpf: c.producaoPorCpf || 'Não'
+      producaoPorCpf: c.producaoPorCpf || 'Não',
+      unidadesJustificativa: c.unidadesJustificativa || []
     }));
   },
 
