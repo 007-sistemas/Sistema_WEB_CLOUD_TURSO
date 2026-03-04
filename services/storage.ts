@@ -1262,15 +1262,37 @@ export const StorageService = {
   }) => {
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+      console.log('[criarSolicitacaoLiberacao] Enviando:', data);
+      
       const response = await fetch(`${API_BASE_URL}/api/solicitacoes-liberacao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
       
+      console.log('[criarSolicitacaoLiberacao] Status:', response.status);
+      
+      // Tentar ler resposta como texto primeiro
+      const responseText = await response.text();
+      console.log('[criarSolicitacaoLiberacao] Resposta:', responseText);
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro ao criar solicitação');
+        let errorMsg = 'Erro ao criar solicitação';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMsg = errorData.error || errorMsg;
+        } catch {
+          errorMsg = responseText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
+      
+      // Parse da resposta de sucesso
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        result = { message: 'Solicitação criada' };
       }
       
       StorageService.logAudit(
@@ -1278,9 +1300,9 @@ export const StorageService = {
         `Solicitação de liberação criada para cooperado ${data.cooperado_id} na unidade ${data.hospital_id}`
       );
       
-      return await response.json();
+      return result;
     } catch (error: any) {
-      console.error('Erro ao criar solicitação:', error);
+      console.error('[criarSolicitacaoLiberacao] Erro:', error);
       throw error;
     }
   },

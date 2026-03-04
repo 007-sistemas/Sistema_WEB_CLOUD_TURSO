@@ -74,44 +74,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Criar nova solicitação
       const { cooperado_id, hospital_id, observacao } = req.body;
       
+      console.log('[POST solicitacoes] Recebido:', { cooperado_id, hospital_id, observacao });
+      
       if (!cooperado_id || !hospital_id) {
+        console.error('[POST solicitacoes] Dados incompletos');
         return res.status(400).json({ 
           error: 'cooperado_id e hospital_id são obrigatórios' 
         });
       }
       
-      // Verificar se já existe solicitação pendente
-      const existente = await turso.execute({
-        sql: `
-          SELECT id FROM solicitacoes_liberacao 
-          WHERE cooperado_id = ? 
-          AND hospital_id = ? 
-          AND status = 'pendente'
-        `,
-        args: [cooperado_id, hospital_id]
-      });
-      
-      if (existente.rows.length > 0) {
-        return res.status(400).json({ 
-          error: 'Já existe uma solicitação pendente para esta unidade' 
+      try {
+        // Verificar se já existe solicitação pendente
+        const existente = await turso.execute({
+          sql: `
+            SELECT id FROM solicitacoes_liberacao 
+            WHERE cooperado_id = ? 
+            AND hospital_id = ? 
+            AND status = 'pendente'
+          `,
+          args: [String(cooperado_id), String(hospital_id)]
+        });
+        
+        console.log('[POST solicitacoes] Verificação duplicata:', existente.rows.length);
+        
+        if (existente.rows.length > 0) {
+          return res.status(400).json({ 
+            error: 'Já existe uma solicitação pendente para esta unidade' 
+          });
+        }
+        
+        const dataAtual = new Date().toISOString();
+        
+        console.log('[POST solicitacoes] Criando solicitação:', { cooperado_id, hospital_id, dataAtual });
+        
+        const result = await turso.execute({
+          sql: `
+            INSERT INTO solicitacoes_liberacao 
+            (cooperado_id, hospital_id, data_solicitacao, status, observacao)
+            VALUES (?, ?, ?, 'pendente', ?)
+          `,
+          args: [String(cooperado_id), String(hospital_id), dataAtual, observacao || null]
+        });
+        
+        console.log('[POST solicitacoes] Solicitação criada com ID:', result.lastInsertRowid);
+        
+        return res.status(201).json({ 
+          success: true,
+          message: 'Solicitação criada com sucesso',
+          id: result.lastInsertRowid 
+        });
+      } catch (insertError: any) {
+        console.error('[POST solicitacoes] Erro ao inserir:', insertError);
+        return res.status(500).json({
+          error: 'Erro ao criar solicitação no banco de dados',
+          details: insertError.message
         });
       }
-      
-      const dataAtual = new Date().toISOString();
-      
-      const result = await turso.execute({
-        sql: `
-          INSERT INTO solicitacoes_liberacao 
-          (cooperado_id, hospital_id, data_solicitacao, status, observacao)
-          VALUES (?, ?, ?, 'pendente', ?)
-        `,
-        args: [cooperado_id, hospital_id, dataAtual, observacao || null]
-      });
-      
-      return res.status(201).json({ 
-        message: 'Solicitação criada com sucesso',
-        id: result.lastInsertRowid 
-      });
     }
 
     if (req.method === 'PUT') {
