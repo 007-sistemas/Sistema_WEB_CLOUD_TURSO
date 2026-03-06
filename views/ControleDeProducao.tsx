@@ -628,8 +628,8 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
       // 1. Hospital Filter
       if (filterHospital && log.hospitalId !== filterHospital) return false;
       
-      // 2. Setor Filter
-      if (filterSetor && log.setorId !== filterSetor) return false;
+      // 2. Setor Filter (converter para string para comparação consistente)
+      if (filterSetor && String(log.setorId) !== String(filterSetor)) return false;
 
       // 3. Cooperado Filter (apenas para mode=manager)
       if (mode === 'manager' && filterCooperado && log.cooperadoId !== filterCooperado) return false;
