@@ -90,6 +90,11 @@ export const Layout: React.FC<LayoutProps> = ({
   // Contar justificativas pendentes (Neon com fallback local)
   React.useEffect(() => {
     const countPendentes = async () => {
+      let pendingJustificativasCount = 0;
+      let pendingSolicitacoesCount = 0;
+
+      const isTomadorSession = session?.user?.categoria === 'tomador';
+
       try {
         const remoteRaw = await (await import('../services/api')).apiGet<any[]>('sync?action=list_justificativas');
         const remote = remoteRaw.map(j => j.status === 'Aguardando autorização' ? { ...j, status: 'Pendente' } : j);
@@ -100,7 +105,7 @@ export const Layout: React.FC<LayoutProps> = ({
             return hospitalId && unidadesTomador.includes(String(hospitalId));
           });
         }
-        setPendentesCount(pending.length);
+        pendingJustificativasCount = pending.length;
       } catch (err) {
         const all = StorageService.getJustificativas();
         let pending = all.filter(j => j.status === 'Pendente');
@@ -110,8 +115,29 @@ export const Layout: React.FC<LayoutProps> = ({
             return hospitalId && unidadesTomador.includes(String(hospitalId));
           });
         }
-        setPendentesCount(pending.length);
+        pendingJustificativasCount = pending.length;
       }
+
+      try {
+        if (isTomadorSession && unidadesTomador && unidadesTomador.length > 0) {
+          for (const hospitalId of unidadesTomador) {
+            const solicitacoes = await StorageService.getSolicitacoesLiberacao({
+              status: 'pendente',
+              hospital_id: String(hospitalId),
+            });
+            if (Array.isArray(solicitacoes)) {
+              pendingSolicitacoesCount += solicitacoes.length;
+            }
+          }
+        } else if (!isTomadorSession) {
+          const solicitacoes = await StorageService.getSolicitacoesLiberacao({ status: 'pendente' });
+          pendingSolicitacoesCount = Array.isArray(solicitacoes) ? solicitacoes.length : 0;
+        }
+      } catch (err) {
+        pendingSolicitacoesCount = 0;
+      }
+
+      setPendentesCount(pendingJustificativasCount + pendingSolicitacoesCount);
     };
     countPendentes();
     // Recarregar a cada 5 segundos para atualizar badge em tempo real
