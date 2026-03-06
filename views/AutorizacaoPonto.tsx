@@ -591,17 +591,21 @@ export const AutorizacaoPonto: React.FC = () => {
                     <span className="text-sm">Nenhuma solicitação pendente de autorização.</span>
                 </div>
             ) : (
-                <div>
+                <div className="p-4 md:p-5 bg-slate-50/40 space-y-5">
                   {pendingSolicitacoesLiberacao.length > 0 && (
-                    <div className="border-b border-gray-200">
-                      <div className="px-4 py-3 bg-amber-50 border-b border-amber-100">
-                        <h3 className="text-sm font-semibold text-amber-800">
-                          Solicitações de Liberação de Unidade ({pendingSolicitacoesLiberacao.length})
+                    <section className="rounded-xl border border-amber-200 bg-amber-50/40 shadow-sm overflow-hidden">
+                      <div className="px-4 py-3 bg-amber-100/50 border-b border-amber-200 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          Solicitações de Liberação de Unidade
                         </h3>
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-amber-200 text-amber-900">
+                          {pendingSolicitacoesLiberacao.length}
+                        </span>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-gray-600">
-                          <thead className="bg-amber-50/60 text-gray-700 font-semibold border-b border-gray-200">
+                          <thead className="bg-amber-50/70 text-gray-700 font-semibold border-b border-amber-200">
                             <tr>
                               <th className="px-4 py-3">Data Solicitação</th>
                               <th className="px-4 py-3">Cooperado</th>
@@ -610,9 +614,9 @@ export const AutorizacaoPonto: React.FC = () => {
                               <th className="px-4 py-3 text-right">Ações</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-100">
+                          <tbody className="divide-y divide-amber-100">
                             {pendingSolicitacoesLiberacao.map((sol) => (
-                              <tr key={`sol-${sol.id}`} className="hover:bg-gray-50">
+                              <tr key={`sol-${sol.id}`} className="hover:bg-amber-50/60 transition-colors">
                                 <td className="px-4 py-3">
                                   {new Date(sol.data_solicitacao).toLocaleDateString('pt-BR')} {new Date(sol.data_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                 </td>
@@ -647,11 +651,22 @@ export const AutorizacaoPonto: React.FC = () => {
                           </tbody>
                         </table>
                       </div>
-                    </div>
+                    </section>
                   )}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-600">
-                    <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
+
+                  <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                        <CheckSquare className="h-4 w-4 text-primary-600" />
+                        Justificativas de Plantão Pendentes
+                      </h3>
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-primary-100 text-primary-800">
+                        {pendingJustificativas.length}
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm text-gray-600">
+                        <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
                       <tr>
                         <th className="px-4 py-3">Data Solicitação</th>
                         <th className="px-4 py-3">Cooperado</th>
@@ -662,8 +677,8 @@ export const AutorizacaoPonto: React.FC = () => {
                         <th className="px-4 py-3">Motivo</th>
                         <th className="px-4 py-3 text-right">Ações</th>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
                       {pendingJustificativas.map((just) => {
                         const pontoInfo = getPontoInfo(just);
                         // Buscar nome da unidade
@@ -765,9 +780,15 @@ export const AutorizacaoPonto: React.FC = () => {
                           </tr>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
+                        </tbody>
+                      </table>
+                    </div>
+                    {pendingJustificativas.length === 0 && (
+                      <div className="px-4 py-6 text-center text-sm text-gray-500 border-t border-gray-100">
+                        Nenhuma justificativa de plantão pendente no momento.
+                      </div>
+                    )}
+                  </section>
                 </div>
             )}
           </>
