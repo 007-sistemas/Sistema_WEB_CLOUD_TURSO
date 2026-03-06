@@ -81,33 +81,6 @@
       .dark label { color: #e2e8f0 !important; }
     </style>
     
-    <!-- SDK Biometria Digital Persona -->
-    <!-- Caminhos relativos (.) para garantir carregamento local ou em subpastas -->
-    <script src="./js/es6-shim.js"></script>
-    <script src="./js/websdk.client.bundle.min.js"></script>
-    <script src="./js/fingerprint.sdk.min.js"></script>
-    
-    <script>
-      window.define = null;
-      console.log('Scripts de Biometria injetados via HTML');
-      
-      // Verificação robusta do carregamento
-      function checkFingerprintSdk() {
-        if(window.Fingerprint) {
-            console.log('✅ SDK Fingerprint carregado com sucesso.');
-        } else {
-            // ...existing code...
-            // Tenta verificar se o script falhou silenciosamente ou se está atrasado
-            setTimeout(function() {
-               if(window.Fingerprint) console.log('✅ SDK Fingerprint carregado (atrasado).');
-               // ...existing code...
-            }, 2000);
-        }
-      }
-      
-      window.addEventListener('load', checkFingerprintSdk);
-    </script>
-    
     <script type="importmap">
 {
   "imports": {

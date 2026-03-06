@@ -25,18 +25,6 @@ export default function App() {
   const [userPermissions, setUserPermissions] = useState<HospitalPermissions | null>(null);
 
   useEffect(() => {
-    const checkSdk = setInterval(() => {
-      // @ts-ignore
-      if (window.Fingerprint) {
-        console.log('✅ SDK Biometria detectado (Global).');
-        clearInterval(checkSdk);
-      }
-    }, 1000);
-    setTimeout(() => clearInterval(checkSdk), 5000);
-    return () => clearInterval(checkSdk);
-  }, []);
-
-  useEffect(() => {
     // Sempre sincroniza managers do backend remoto ao iniciar
     (async () => {
       await StorageService.refreshManagersFromRemote();
