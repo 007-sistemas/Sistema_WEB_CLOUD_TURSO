@@ -230,6 +230,14 @@ export const Relatorios: React.FC = () => {
 
     const rows: RelatorioRow[] = [];
 
+    const isFechado = (entrada: RegistroPonto, saida?: RegistroPonto) => {
+      if (saida) return true;
+      if (entrada.saida && entrada.saida !== '--:--') return true;
+      if (entrada.status === 'Fechado') return true;
+      if (entrada.validadoPor && entrada.status !== 'Rejeitado') return true;
+      return false;
+    };
+
     entradas.forEach(entrada => {
       // Encontrar saída correspondente pelo código
       const saida = encontrarSaida(entrada);
@@ -253,7 +261,7 @@ export const Relatorios: React.FC = () => {
       if (filterCooperado && entrada.cooperadoId !== filterCooperado) return;
       if (filterCategoria && cooperado.categoriaProfissional !== filterCategoria) return;
       // Filtro de status
-      const statusTemp = saida ? 'Fechado' : 'Em Aberto';
+      const statusTemp = isFechado(entrada, saida) ? 'Fechado' : 'Em Aberto';
       if (filterStatus === 'fechados' && statusTemp !== 'Fechado') return;
       if (filterStatus === 'abertos' && statusTemp !== 'Em Aberto') return;
       const dataEntrada = new Date(entrada.timestamp);
@@ -276,7 +284,7 @@ export const Relatorios: React.FC = () => {
         totalHoras = `${diffHours}h ${diffMinutes}m`;
       }
 
-      const status = (saida || (entrada.saida && entrada.saida !== '--:--')) ? 'Fechado' : 'Em Aberto';
+      const status = isFechado(entrada, saida) ? 'Fechado' : 'Em Aberto';
 
       rows.push({
         cooperadoNome: cooperado.nome,
