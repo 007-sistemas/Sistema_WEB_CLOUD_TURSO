@@ -600,6 +600,68 @@ export const StorageService = {
     });
   },
 
+  liberarUnidadeJustificativaPorProducao: (cooperadoId?: string, hospitalId?: string): boolean => {
+    if (!cooperadoId || !hospitalId) return false;
+
+    const cooperados = StorageService.getCooperados();
+    const idx = cooperados.findIndex(c => String(c.id) === String(cooperadoId));
+    if (idx < 0) return false;
+
+    const cooperado = cooperados[idx];
+    const unidadeId = String(hospitalId);
+    const unidadesAtuais = Array.isArray(cooperado.unidadesJustificativa)
+      ? cooperado.unidadesJustificativa.map(u => String(u))
+      : [];
+
+    if (unidadesAtuais.includes(unidadeId)) return false;
+
+    const atualizado: Cooperado = {
+      ...cooperado,
+      unidadesJustificativa: [...unidadesAtuais, unidadeId],
+      updatedAt: new Date().toISOString(),
+    };
+
+    cooperados[idx] = atualizado;
+    localStorage.setItem(COOPERADOS_KEY, JSON.stringify(cooperados));
+
+    const hospitalNome = StorageService.getHospitais().find(h => String(h.id) === unidadeId)?.nome || unidadeId;
+    StorageService.logAudit(
+      'LIBERACAO_AUTOMATICA_UNIDADE',
+      `Unidade ${hospitalNome} liberada automaticamente para justificativa do cooperado ${atualizado.nome} após produção registrada.`
+    );
+
+    // Sincronizar liberação automática no backend
+    syncToNeon('sync_cooperado', {
+      id: atualizado.id,
+      nome: atualizado.nome,
+      cpf: atualizado.cpf,
+      email: atualizado.email,
+      telefone: atualizado.telefone,
+      matricula: atualizado.matricula,
+      categoriaProfissional: atualizado.categoriaProfissional,
+      status: atualizado.status,
+      producaoPorCpf: atualizado.producaoPorCpf,
+      unidadesJustificativa: atualizado.unidadesJustificativa,
+    });
+
+    apiPut('cooperados', {
+      id: atualizado.id,
+      nome: atualizado.nome,
+      cpf: atualizado.cpf,
+      email: atualizado.email,
+      telefone: atualizado.telefone,
+      matricula: atualizado.matricula,
+      categoriaProfissional: atualizado.categoriaProfissional,
+      status: atualizado.status,
+      producaoPorCpf: atualizado.producaoPorCpf,
+      unidadesJustificativa: atualizado.unidadesJustificativa,
+    }).catch((err) => {
+      console.warn('[COOPERADOS] Falha ao sincronizar liberação automática via API:', err);
+    });
+
+    return true;
+  },
+
   deleteCooperado: (id: string): void => {
     // Ensure ID comparison is robust (string vs string)
     const list = StorageService.getCooperados();
@@ -732,6 +794,18 @@ export const StorageService = {
         ...localManualFiltrado.filter(l => !mapped.some(r => r.id === l.id))
       ];
 
+      // Liberação automática de unidade para justificativa ao detectar produção remota.
+      const paresLiberacao = new Set<string>();
+      merged.forEach((p) => {
+        if (!p.cooperadoId || !p.hospitalId) return;
+        paresLiberacao.add(`${String(p.cooperadoId)}::${String(p.hospitalId)}`);
+      });
+
+      paresLiberacao.forEach((par) => {
+        const [cId, hId] = par.split('::');
+        StorageService.liberarUnidadeJustificativaPorProducao(cId, hId);
+      });
+
       localStorage.setItem(PONTOS_KEY, JSON.stringify(merged));
     } catch (err) {
       console.error('[StorageService] Erro ao sincronizar pontos do Neon:', err);
@@ -742,6 +816,10 @@ export const StorageService = {
     const list = StorageService.getPontos();
     list.push(ponto);
     localStorage.setItem(PONTOS_KEY, JSON.stringify(list));
+
+    // Regra de negócio: produção registrada libera automaticamente a unidade para justificativa.
+    StorageService.liberarUnidadeJustificativaPorProducao(ponto.cooperadoId, ponto.hospitalId);
+
     StorageService.logAudit('REGISTRO_PRODUCAO', `Produção (${ponto.tipo}) registrada para ${ponto.cooperadoNome}. Status: ${ponto.status}`);
     
     // Sincronizar com Neon (assíncrono)
@@ -776,6 +854,9 @@ export const StorageService = {
     if (index !== -1) {
         list[index] = ponto;
         localStorage.setItem(PONTOS_KEY, JSON.stringify(list));
+
+        // Regra de negócio: atualização de produção também pode liberar unidade automaticamente.
+        StorageService.liberarUnidadeJustificativaPorProducao(ponto.cooperadoId, ponto.hospitalId);
         
         // Sincronizar com Neon (assíncrono)
         syncToNeon('sync_ponto', {
