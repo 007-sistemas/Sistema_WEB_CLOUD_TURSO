@@ -1396,12 +1396,12 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
                         <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-b-lg shadow-lg max-h-60 overflow-y-auto mt-1">
                             {cooperados.filter(c => 
                                 c.nome.toLowerCase().includes(filterCooperadoInput.toLowerCase()) || 
-                                (c.matricula && c.matricula.toLowerCase().includes(filterCooperadoInput.toLowerCase()))
+                                (c.matricula && String(c.matricula).toLowerCase().includes(filterCooperadoInput.toLowerCase()))
                             ).length > 0 ? (
                                 cooperados
                                 .filter(c => 
                                     c.nome.toLowerCase().includes(filterCooperadoInput.toLowerCase()) || 
-                                    (c.matricula && c.matricula.toLowerCase().includes(filterCooperadoInput.toLowerCase()))
+                                    (c.matricula && String(c.matricula).toLowerCase().includes(filterCooperadoInput.toLowerCase()))
                                 )
                                 .map(c => (
                                     <div 
@@ -1840,12 +1840,12 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
                         <div className="absolute z-20 w-full bg-white border border-gray-200 rounded-b-lg shadow-lg max-h-60 overflow-y-auto mt-1">
                             {cooperados.filter(c => 
                                 c.nome.toLowerCase().includes(formCooperadoInput.toLowerCase()) || 
-                                (c.matricula && c.matricula.toLowerCase().includes(formCooperadoInput.toLowerCase()))
+                                (c.matricula && String(c.matricula).toLowerCase().includes(formCooperadoInput.toLowerCase()))
                             ).length > 0 ? (
                                 cooperados
                                 .filter(c => 
                                     c.nome.toLowerCase().includes(formCooperadoInput.toLowerCase()) || 
-                                    (c.matricula && c.matricula.toLowerCase().includes(formCooperadoInput.toLowerCase()))
+                                    (c.matricula && String(c.matricula).toLowerCase().includes(formCooperadoInput.toLowerCase()))
                                 )
                                 .map(c => (
                                     <div 
