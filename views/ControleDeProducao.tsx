@@ -73,6 +73,9 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
 
   const [filterDataIni, setFilterDataIni] = useState('');
   const [filterDataFim, setFilterDataFim] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITENS_POR_PAGINA_COOPERADO = 15;
 
   // Selection State
   const [selectedPontoId, setSelectedPontoId] = useState<string | null>(null);
@@ -146,13 +149,6 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
     if (mode === 'cooperado') {
       const currentSession = StorageService.getSession();
       setSession(currentSession);
-      
-      // Definir filtro de data padrão (mês atual)
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-      setFilterDataIni(firstDay);
-      setFilterDataFim(lastDay);
     }
     
     const init = async () => {
@@ -869,6 +865,27 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
 
   const shiftRows = getShiftRows();
 
+  const totalPaginas = mode === 'cooperado'
+    ? Math.max(1, Math.ceil(shiftRows.length / ITENS_POR_PAGINA_COOPERADO))
+    : 1;
+  const paginaAtual = Math.min(currentPage, totalPaginas);
+  const displayedRows = mode === 'cooperado'
+    ? shiftRows.slice((paginaAtual - 1) * ITENS_POR_PAGINA_COOPERADO, paginaAtual * ITENS_POR_PAGINA_COOPERADO)
+    : shiftRows;
+
+  useEffect(() => {
+    if (mode !== 'cooperado') return;
+    if (currentPage > totalPaginas) {
+      setCurrentPage(totalPaginas);
+    }
+  }, [mode, currentPage, totalPaginas]);
+
+  useEffect(() => {
+    if (mode === 'cooperado') {
+      setCurrentPage(1);
+    }
+  }, [mode, filterHospital, filterSetor, filterDataIni, filterDataFim]);
+
   const handleSelectRow = (row: ShiftRow) => {
     // Preencher formulário com dados da entrada e saída
     const pontoEntrada = row.entry;
@@ -1143,6 +1160,7 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
     setFilterDataIni('');
     setFilterDataFim('');
     setShowRecusadas(false);
+    setCurrentPage(1);
   }
 
   // Removido: handlers de justificativa parcial
@@ -1301,7 +1319,7 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
           {mode === 'cooperado' ? 'Espelho da Biometria' : 'Controle de Produção'}
         </h2>
         {mode === 'cooperado' && (
-          <p className="text-sm text-gray-600">Consulte seu histórico de produção e registros de ponto</p>
+          <p className="text-sm text-gray-600">Consulte o seu histórico de produção</p>
         )}
       </div>
 
@@ -1616,7 +1634,7 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white dark:bg-gray-900">
-              {shiftRows.map((row) => (
+              {displayedRows.map((row) => (
                 <tr 
                   key={row.id} 
                   onDoubleClick={mode === 'manager' ? () => handleSelectRow(row) : undefined}
@@ -1713,7 +1731,7 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
                   )}
                 </tr>
               ))}
-              {shiftRows.length === 0 && (
+              {displayedRows.length === 0 && (
                 loading ? (
                   <tr>
                     <td colSpan={mode === 'manager' ? 8 : 6} className="text-center py-12 text-gray-400">
@@ -1740,6 +1758,40 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
             </tbody>
           </table>
         </div>
+
+        {mode === 'cooperado' && shiftRows.length > 0 && (
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-3 border-t border-gray-200 bg-gray-50">
+            <span className="text-xs text-gray-600">
+              Mostrando {((paginaAtual - 1) * ITENS_POR_PAGINA_COOPERADO) + 1}
+              {' - '}
+              {Math.min(paginaAtual * ITENS_POR_PAGINA_COOPERADO, shiftRows.length)}
+              {' de '}
+              {shiftRows.length} registros
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={paginaAtual <= 1}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+
+              <span className="text-sm font-medium text-gray-700 min-w-[90px] text-center">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPaginas, prev + 1))}
+                disabled={paginaAtual >= totalPaginas}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* FORM SECTION - Apenas para mode=manager */}
