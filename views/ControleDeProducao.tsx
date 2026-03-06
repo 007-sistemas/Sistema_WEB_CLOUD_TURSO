@@ -788,9 +788,9 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
       const entradas = ordenados.filter(r => r.tipo === TipoPonto.ENTRADA);
       const saidas = ordenados.filter(r => r.tipo === TipoPonto.SAIDA);
 
-      // 3. Parear cada ENTRADA com a próxima SAÍDA disponível
+
+      // 3. Parear cada ENTRADA com a SAÍDA correspondente (mesmo dia e horário, considerando plantão noturno)
       entradas.forEach(entrada => {
-        // Procurar SAÍDA vinculada via relatedId primeiro (preferência)
         let saidaPareada: RegistroPonto | undefined;
         let saidaIndex = -1;
 
@@ -804,23 +804,23 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
           saidaIndex = saidas.findIndex(s => s.relatedId === entrada.id && !processedExits.has(s.id));
         }
 
-        // 3ª prioridade: mesmo código e timestamp posterior (apenas saídas sem relatedId)
+        // 3ª prioridade: pareamento por data/hora (considerando plantão noturno)
         if (saidaIndex === -1) {
-          saidaIndex = saidas.findIndex(s => 
-            s.codigo === entrada.codigo &&
-            new Date(s.timestamp).getTime() > new Date(entrada.timestamp).getTime() &&
-            !processedExits.has(s.id) &&
-            !s.relatedId
-          );
-        }
-
-        // 4ª prioridade: próxima saída cronológica (apenas saídas sem relatedId)
-        if (saidaIndex === -1) {
-          saidaIndex = saidas.findIndex(s => 
-            new Date(s.timestamp).getTime() > new Date(entrada.timestamp).getTime() &&
-            !processedExits.has(s.id) &&
-            !s.relatedId
-          );
+          saidaIndex = saidas.findIndex(s => {
+            const entradaDate = new Date(entrada.timestamp);
+            const saidaDate = new Date(s.timestamp);
+            // Plantão noturno: saída pode ser no dia seguinte
+            const isSameDay = entradaDate.toISOString().split('T')[0] === saidaDate.toISOString().split('T')[0];
+            const isNightShift = entradaDate.getHours() > saidaDate.getHours() && saidaDate.getDate() === entradaDate.getDate() + 1;
+            return (
+              !processedExits.has(s.id) &&
+              !s.relatedId &&
+              (
+                (isSameDay && saidaDate.getTime() > entradaDate.getTime()) ||
+                isNightShift
+              )
+            );
+          });
         }
 
         if (saidaIndex !== -1) {
