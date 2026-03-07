@@ -768,6 +768,15 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
     const shifts: ShiftRow[] = [];
     const processedExits = new Set<string>();
     const processedEntries = new Set<string>();
+    const MAX_SHIFT_MS = 24 * 60 * 60 * 1000;
+
+    const sameContext = (entrada: RegistroPonto, saida: RegistroPonto) => {
+      return (
+        String(saida.cooperadoId || '') === String(entrada.cooperadoId || '')
+        && String(saida.hospitalId || '') === String(entrada.hospitalId || '')
+        && String(saida.setorId || '') === String(entrada.setorId || '')
+      );
+    };
 
     // 1. Agrupar registros por cooperado
     const gruposPorCooperado = new Map<string, RegistroPonto[]>();
@@ -804,21 +813,17 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
           saidaIndex = saidas.findIndex(s => s.relatedId === entrada.id && !processedExits.has(s.id));
         }
 
-        // 3ª prioridade: pareamento por data/hora (considerando plantão noturno)
+        // 3ª prioridade: pareamento cronológico no mesmo contexto (até 24h)
         if (saidaIndex === -1) {
           saidaIndex = saidas.findIndex(s => {
-            const entradaDate = new Date(entrada.timestamp);
-            const saidaDate = new Date(s.timestamp);
-            // Plantão noturno: saída pode ser no dia seguinte
-            const isSameDay = entradaDate.toISOString().split('T')[0] === saidaDate.toISOString().split('T')[0];
-            const isNightShift = entradaDate.getHours() > saidaDate.getHours() && saidaDate.getDate() === entradaDate.getDate() + 1;
+            const entradaTs = new Date(entrada.timestamp).getTime();
+            const saidaTs = new Date(s.timestamp).getTime();
             return (
               !processedExits.has(s.id) &&
               !s.relatedId &&
-              (
-                (isSameDay && saidaDate.getTime() > entradaDate.getTime()) ||
-                isNightShift
-              )
+              sameContext(entrada, s) &&
+              saidaTs > entradaTs &&
+              (saidaTs - entradaTs) <= MAX_SHIFT_MS
             );
           });
         }
@@ -888,7 +893,7 @@ export const ControleDeProducao: React.FC<Props> = ({ mode = 'manager' }) => {
           id: entrada.id,
           cooperadoNome: entrada.cooperadoNome,
           local: entrada.local,
-          setorNome: getSetorNome(entrada),
+          setorNome: getSetorNome(saidaPareada || entrada),
           data: new Date(entrada.timestamp).toLocaleDateString(),
           entry: entrada,
           exit: saidaPareada,

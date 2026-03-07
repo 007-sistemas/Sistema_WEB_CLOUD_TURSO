@@ -269,7 +269,8 @@ export const Relatorios: React.FC = () => {
       
       const cooperado = cooperados.find(c => c.id === entrada.cooperadoId);
       const hospital = hospitais.find(h => h.id === entrada.hospitalId);
-      const setorId = entrada.setorId ? String(entrada.setorId) : '';
+      const setorBase = saida || entrada;
+      const setorId = setorBase.setorId ? String(setorBase.setorId) : '';
       // Buscar setor apenas no que existe no banco
       const setor = setorId
         ? (todosSetores.find(s => String(s.id) === setorId)

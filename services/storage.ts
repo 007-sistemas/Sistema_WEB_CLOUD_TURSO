@@ -35,6 +35,72 @@ const broadcastPontoChange = (action: 'save' | 'update' | 'delete', id: string) 
   }
 };
 
+const isSaida = (tipo?: string) => String(tipo || '').toUpperCase() === 'SAIDA';
+const isEntrada = (tipo?: string) => String(tipo || '').toUpperCase() === 'ENTRADA';
+
+const toSyncPontoPayload = (ponto: RegistroPonto) => ({
+  id: ponto.id,
+  codigo: ponto.codigo,
+  cooperadoId: ponto.cooperadoId,
+  cooperadoNome: ponto.cooperadoNome,
+  data: ponto.data,
+  entrada: ponto.entrada,
+  saida: ponto.saida,
+  timestamp: ponto.timestamp,
+  tipo: ponto.tipo,
+  local: ponto.local,
+  hospitalId: ponto.hospitalId,
+  setorId: ponto.setorId,
+  observacao: ponto.observacao,
+  validadoPor: ponto.validadoPor,
+  rejeitadoPor: ponto.rejeitadoPor,
+  motivoRejeicao: ponto.motivoRejeicao,
+  relatedId: ponto.relatedId,
+  status: ponto.status,
+  isManual: ponto.isManual
+});
+
+const encontrarEntradaDaSaida = (list: RegistroPonto[], saida: RegistroPonto): RegistroPonto | undefined => {
+  const saidaTs = new Date(saida.timestamp).getTime();
+  const maxShiftMs = 24 * 60 * 60 * 1000;
+
+  // 1) SAÍDA aponta para ENTRADA
+  if (saida.relatedId) {
+    const byId = list.find(p => p.id === saida.relatedId && isEntrada(p.tipo));
+    if (byId) return byId;
+  }
+
+  // 2) ENTRADA aponta para SAÍDA
+  const reverse = list.find(p => isEntrada(p.tipo) && p.relatedId === saida.id);
+  if (reverse) return reverse;
+
+  // 3) Mesmo código (mais recente antes da saída)
+  if (saida.codigo) {
+    const byCode = list
+      .filter(p => {
+        if (!isEntrada(p.tipo)) return false;
+        if (String(p.codigo || '') !== String(saida.codigo || '')) return false;
+        if (String(p.cooperadoId || '') !== String(saida.cooperadoId || '')) return false;
+        if (saida.hospitalId && String(p.hospitalId || '') !== String(saida.hospitalId || '')) return false;
+        const entradaTs = new Date(p.timestamp).getTime();
+        return entradaTs <= saidaTs && (saidaTs - entradaTs) <= maxShiftMs;
+      })
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+    if (byCode) return byCode;
+  }
+
+  // 4) Fallback cronológico no mesmo cooperado/unidade
+  return list
+    .filter(p => {
+      if (!isEntrada(p.tipo)) return false;
+      if (String(p.cooperadoId || '') !== String(saida.cooperadoId || '')) return false;
+      if (saida.hospitalId && String(p.hospitalId || '') !== String(saida.hospitalId || '')) return false;
+      const entradaTs = new Date(p.timestamp).getTime();
+      return entradaTs <= saidaTs && (saidaTs - entradaTs) <= maxShiftMs;
+    })
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+};
+
 const DEFAULT_USER_PREFERENCES: UserPreferences = {
   theme: 'auto',
   primaryColor: '#7c3aed',
@@ -805,74 +871,111 @@ export const StorageService = {
 
   savePonto: (ponto: RegistroPonto): void => {
     const list = StorageService.getPontos();
-    list.push(ponto);
+    const pontoToSave: RegistroPonto = { ...ponto };
+    let entradaAtualizada: RegistroPonto | null = null;
+
+    // Regra de negócio: setor da SAÍDA prevalece e atualiza a ENTRADA vinculada.
+    if (isSaida(pontoToSave.tipo)) {
+      const entrada = encontrarEntradaDaSaida(list, pontoToSave);
+      if (entrada) {
+        if (!pontoToSave.relatedId) {
+          pontoToSave.relatedId = entrada.id;
+        }
+
+        const novaEntrada: RegistroPonto = {
+          ...entrada,
+          setorId: pontoToSave.setorId || entrada.setorId,
+          hospitalId: pontoToSave.hospitalId || entrada.hospitalId,
+          local: pontoToSave.local || entrada.local,
+          relatedId: pontoToSave.id
+        };
+
+        const mudouEntrada = (
+          String(novaEntrada.setorId || '') !== String(entrada.setorId || '')
+          || String(novaEntrada.hospitalId || '') !== String(entrada.hospitalId || '')
+          || String(novaEntrada.local || '') !== String(entrada.local || '')
+          || String(novaEntrada.relatedId || '') !== String(entrada.relatedId || '')
+        );
+
+        if (mudouEntrada) {
+          const entradaIndex = list.findIndex(p => p.id === entrada.id);
+          if (entradaIndex !== -1) {
+            list[entradaIndex] = novaEntrada;
+            entradaAtualizada = novaEntrada;
+          }
+        }
+      }
+    }
+
+    list.push(pontoToSave);
     localStorage.setItem(PONTOS_KEY, JSON.stringify(list));
 
     // Regra de negócio: produção registrada libera automaticamente a unidade para justificativa.
-    StorageService.liberarUnidadeJustificativaPorProducao(ponto.cooperadoId, ponto.hospitalId);
+    StorageService.liberarUnidadeJustificativaPorProducao(pontoToSave.cooperadoId, pontoToSave.hospitalId);
 
-    StorageService.logAudit('REGISTRO_PRODUCAO', `Produção (${ponto.tipo}) registrada para ${ponto.cooperadoNome}. Status: ${ponto.status}`);
+    StorageService.logAudit('REGISTRO_PRODUCAO', `Produção (${pontoToSave.tipo}) registrada para ${pontoToSave.cooperadoNome}. Status: ${pontoToSave.status}`);
     
     // Sincronizar com Neon (assíncrono)
-    syncToNeon('sync_ponto', {
-      id: ponto.id,
-      codigo: ponto.codigo,
-      cooperadoId: ponto.cooperadoId,
-      cooperadoNome: ponto.cooperadoNome,
-      data: ponto.data,
-      entrada: ponto.entrada,
-      saida: ponto.saida,
-      timestamp: ponto.timestamp,
-      tipo: ponto.tipo,
-      local: ponto.local,
-      hospitalId: ponto.hospitalId,
-      setorId: ponto.setorId,
-      observacao: ponto.observacao,
-      validadoPor: ponto.validadoPor,
-      rejeitadoPor: ponto.rejeitadoPor,
-      motivoRejeicao: ponto.motivoRejeicao,
-      relatedId: ponto.relatedId,
-      status: ponto.status,
-      isManual: ponto.isManual
-    });
+    syncToNeon('sync_ponto', toSyncPontoPayload(pontoToSave));
+    if (entradaAtualizada) {
+      syncToNeon('sync_ponto', toSyncPontoPayload(entradaAtualizada));
+    }
 
-    broadcastPontoChange('save', ponto.id);
+    broadcastPontoChange('save', pontoToSave.id);
   },
 
   updatePonto: (ponto: RegistroPonto): void => {
     const list = StorageService.getPontos();
     const index = list.findIndex(p => p.id === ponto.id);
     if (index !== -1) {
-        list[index] = ponto;
+        const pontoToUpdate: RegistroPonto = { ...ponto };
+        let entradaAtualizada: RegistroPonto | null = null;
+
+        if (isSaida(pontoToUpdate.tipo)) {
+          const entrada = encontrarEntradaDaSaida(list, pontoToUpdate);
+          if (entrada) {
+            if (!pontoToUpdate.relatedId) {
+              pontoToUpdate.relatedId = entrada.id;
+            }
+
+            const novaEntrada: RegistroPonto = {
+              ...entrada,
+              setorId: pontoToUpdate.setorId || entrada.setorId,
+              hospitalId: pontoToUpdate.hospitalId || entrada.hospitalId,
+              local: pontoToUpdate.local || entrada.local,
+              relatedId: pontoToUpdate.id
+            };
+
+            const mudouEntrada = (
+              String(novaEntrada.setorId || '') !== String(entrada.setorId || '')
+              || String(novaEntrada.hospitalId || '') !== String(entrada.hospitalId || '')
+              || String(novaEntrada.local || '') !== String(entrada.local || '')
+              || String(novaEntrada.relatedId || '') !== String(entrada.relatedId || '')
+            );
+
+            if (mudouEntrada) {
+              const entradaIndex = list.findIndex(p => p.id === entrada.id);
+              if (entradaIndex !== -1 && entradaIndex !== index) {
+                list[entradaIndex] = novaEntrada;
+                entradaAtualizada = novaEntrada;
+              }
+            }
+          }
+        }
+
+        list[index] = pontoToUpdate;
         localStorage.setItem(PONTOS_KEY, JSON.stringify(list));
 
         // Regra de negócio: atualização de produção também pode liberar unidade automaticamente.
-        StorageService.liberarUnidadeJustificativaPorProducao(ponto.cooperadoId, ponto.hospitalId);
+        StorageService.liberarUnidadeJustificativaPorProducao(pontoToUpdate.cooperadoId, pontoToUpdate.hospitalId);
         
         // Sincronizar com Neon (assíncrono)
-        syncToNeon('sync_ponto', {
-          id: ponto.id,
-          codigo: ponto.codigo,
-          cooperadoId: ponto.cooperadoId,
-          cooperadoNome: ponto.cooperadoNome,
-          data: ponto.data,
-          entrada: ponto.entrada,
-          saida: ponto.saida,
-          timestamp: ponto.timestamp,
-          tipo: ponto.tipo,
-          local: ponto.local,
-          hospitalId: ponto.hospitalId,
-          setorId: ponto.setorId,
-          observacao: ponto.observacao,
-          validadoPor: ponto.validadoPor,
-          rejeitadoPor: ponto.rejeitadoPor,
-          motivoRejeicao: ponto.motivoRejeicao,
-          relatedId: ponto.relatedId,
-          status: ponto.status,
-          isManual: ponto.isManual
-        });
+        syncToNeon('sync_ponto', toSyncPontoPayload(pontoToUpdate));
+        if (entradaAtualizada) {
+          syncToNeon('sync_ponto', toSyncPontoPayload(entradaAtualizada));
+        }
 
-        broadcastPontoChange('update', ponto.id);
+        broadcastPontoChange('update', pontoToUpdate.id);
     }
   },
 
