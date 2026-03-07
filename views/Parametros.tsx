@@ -27,6 +27,7 @@ export const Parametros: React.FC = () => {
   const [salvando, setSalvando] = useState(false);
   const [toast, setToast] = useState<{ tipo: 'success' | 'error', mensagem: string } | null>(null);
   const [novoFeriado, setNovoFeriado] = useState<Feriado>({ data: '', nome: '', tipo: 'nacional' });
+  const [erroCarregamento, setErroCarregamento] = useState(false);
 
   useEffect(() => {
     // Carregar parâmetros do backend ao montar
@@ -34,8 +35,11 @@ export const Parametros: React.FC = () => {
       try {
         const remote = await ParametrosService.loadParametrosFromRemote();
         setParametros(remote);
+        setErroCarregamento(false);
       } catch (error) {
-        console.warn('Usando parâmetros locais');
+        console.warn('Erro ao carregar do backend, usando localStorage:', error);
+        setErroCarregamento(true);
+        // Continue usando os parâmetros já carregados do localStorage
       }
     };
     loadParametros();
@@ -120,6 +124,16 @@ export const Parametros: React.FC = () => {
         } text-white`}>
           {toast.tipo === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           {toast.mensagem}
+        </div>
+      )}
+
+      {/* Aviso de backend não disponível */}
+      {erroCarregamento && (
+        <div className="fixed top-20 right-4 z-40 px-4 py-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg shadow-lg flex items-center gap-2 max-w-md">
+          <AlertCircle size={20} />
+          <div className="text-sm">
+            <strong>Modo Offline:</strong> Backend não disponível. Usando configuração local. Crie a tabela no Turso para habilitar sincronização.
+          </div>
         </div>
       )}
 
