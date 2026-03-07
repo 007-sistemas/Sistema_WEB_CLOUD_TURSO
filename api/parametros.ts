@@ -7,7 +7,7 @@ export default async function handler(req: any, res: any) {
       const rows = await sql`SELECT * FROM parametros_sistema WHERE id = 'default'`;
       
       if (rows.length === 0) {
-        // Retornar null se não existir (frontend usará padrão)
+        // Sem registro salvo ainda.
         return res.status(200).json(null);
       }
       

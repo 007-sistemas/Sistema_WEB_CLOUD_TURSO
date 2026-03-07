@@ -190,7 +190,15 @@ export const syncParametrosToRemote = async (parametros: ParametrosSistema): Pro
  */
 export const loadParametrosFromRemote = async (): Promise<ParametrosSistema> => {
   try {
-    const remote = await apiGet<ParametrosSistema>('parametros');
+    const remote = await apiGet<ParametrosSistema | null>('parametros');
+
+    // Quando ainda não existe registro no banco, a API pode retornar null.
+    if (!remote || typeof remote !== 'object') {
+      const local = getParametros();
+      console.log('[parametros] ℹ️ Backend sem registro, usando local/padrão');
+      return local;
+    }
+
     // Salvar no localStorage como cache
     saveParametros(remote);
     console.log('[parametros] ✅ Carregado do backend');
