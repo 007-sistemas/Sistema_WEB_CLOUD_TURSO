@@ -88,6 +88,7 @@ export interface HospitalPermissions {
   perfil: boolean; // New permission for User Profile
   solicitacoesLiberacao: boolean; // Permission for Liberation Requests Management
   setores: boolean; // Permissão para gestão de setores
+  parametros: boolean; // Permissão para configuração de parâmetros do sistema
 }
 
 export interface Hospital {
@@ -198,4 +199,121 @@ export interface SolicitacaoLiberacao {
   cooperado_nome?: string;
   cooperado_cpf?: string;
   hospital_nome?: string;
+}
+
+// Interface para Feriados
+export interface Feriado {
+  data: string; // YYYY-MM-DD
+  nome: string;
+  tipo: 'nacional' | 'estadual' | 'municipal';
+}
+
+// Interface para Parâmetros do Sistema
+export interface ParametrosSistema {
+  id: string;
+  
+  // 1. Calendário
+  calendario: {
+    considerarFinaisDeSemana: boolean;
+    considerarFeriados: boolean;
+    listaFeriados: Feriado[];
+    formatoData: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
+    formatoHora: '24h' | '12h';
+  };
+
+  // 2. Relatórios
+  relatorios: {
+    camposVisiveis: string[];
+    ordenacaoPadrao: Array<{campo: string, ordem: 'asc'|'desc'}>;
+    agruparPor: 'cooperado' | 'hospital' | 'setor' | 'data' | 'categoria' | 'nenhum';
+    totalizadores: {
+      horas: boolean;
+      plantoes: boolean;
+      porCooperado: boolean;
+      porSetor: boolean;
+    };
+    logoEmpresa?: string;
+    cores: {
+      primaria: string;
+      secundaria: string;
+      statusAberto: string;
+      statusFechado: string;
+    };
+    rodape: string;
+    assinaturaDigital: boolean;
+  };
+
+  // 3. Controle de Ponto
+  ponto: {
+    toleranciaPareamentoHoras: number;
+    exigirCodigoPareamento: boolean;
+    permitirMultiplosPlantoesNoDia: boolean;
+    setorPredominante: 'entrada' | 'saida' | 'maior_tempo';
+    statusAutomatico: boolean;
+    exibirRecusadosPorPadrao: boolean;
+    confirmarExclusao: boolean;
+  };
+
+  // 4. Justificativas
+  justificativas: {
+    aprovarAutomaticamente: {
+      atestadoMedico: boolean;
+      faltaJustificada: boolean;
+      outros: boolean;
+    };
+    exigirAnexos: {
+      atestado: boolean;
+      declaracao: boolean;
+      outros: boolean;
+    };
+    prazoMaximoDias: number;
+    notificarCooperado: boolean;
+    niveisAprovacao: 1 | 2 | 3;
+  };
+
+  // 5. Nomenclatura
+  nomenclatura: {
+    turnoMatutino: string;
+    turnoVespertino: string;
+    turnoNoturno: string;
+    sufixoFDS: string;
+    sufixoFeriado: string;
+    termoCooperado: string;
+    termoPlantao: string;
+  };
+
+  // 6. Dashboard
+  dashboard: {
+    periodoPadrao: 'hoje' | 'semana' | 'mes' | 'personalizado';
+    widgetsVisiveis: string[];
+    qtdRegistrosRecentes: number;
+  };
+
+  // 7. Categorias
+  categorias: {
+    ativas: string[];
+    exigirRegistroProfissional: {
+      medico: boolean;
+      enfermeiro: boolean;
+      outros: boolean;
+    };
+    exibirValorHoraPorCategoria: boolean;
+  };
+
+  // 8. Validações
+  validacoes: {
+    intervaloMinimoEntrePlantoes: number;
+    cargaHorariaMaximaSemanal: number;
+    permitirHorasExtras: boolean;
+    percentualHoraExtra: {
+      primeira: number;
+      adicional: number;
+    };
+    validarCpf: boolean;
+    permitirEditarPontosFechados: boolean;
+    auditoriaCompleta: boolean;
+  };
+
+  updatedAt: string;
+  updatedBy?: string;
 }

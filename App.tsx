@@ -13,6 +13,7 @@ import { Login } from './views/Login';
 import { AutorizacaoPonto } from './views/AutorizacaoPonto';
 import { UserProfile } from './views/UserProfile';
 import { TurnosValores } from './views/TurnosValores';
+import { Parametros } from './views/Parametros';
 
 import { SetoresView } from './views/Setores';
 import { HospitalPermissions } from './types';
@@ -141,6 +142,7 @@ export default function App() {
       case 'perfil': return <UserProfile />;
       case 'setores': return <SetoresView />;
       case 'turnosValores': return <TurnosValores />;
+      case 'parametros': return <Parametros />;
       default: return <Dashboard />;
     }
   };

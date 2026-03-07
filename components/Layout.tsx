@@ -15,7 +15,8 @@ import {
   FileClock,
   CheckSquare,
   Wrench,
-  Clock
+  Clock,
+  Settings
 } from 'lucide-react';
 import { Hospital, HospitalPermissions } from '../types';
 import { StorageService } from '../services/storage';
@@ -159,6 +160,7 @@ export const Layout: React.FC<LayoutProps> = ({
     { id: 'autorizacao', label: 'Justificativa de Plantão', icon: CheckSquare, permissionKey: 'autorizacao' },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
     { id: 'espelho', label: 'Espelho da Biometria', icon: FileClock, permissionKey: 'espelho' },
+    { id: 'parametros', label: 'Parâmetros', icon: Settings, permissionKey: 'parametros' },
     { id: 'relatorio', label: 'Controle de Produção', icon: FileText, permissionKey: 'relatorio' },
     { id: 'relatorios', label: 'Relatórios', icon: FileText, permissionKey: 'relatorios' },
   ];
